@@ -61,6 +61,7 @@ paste("Nombre de valors nulls:", sum(is.na(race_id)))
 colSums(is.na(dataset2))
 #summary(dataset=="")
 #summary(dataset=="-1")
+
 ```
 
 mirarem també els valors extrems.
