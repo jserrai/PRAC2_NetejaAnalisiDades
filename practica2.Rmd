@@ -9,22 +9,49 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+obtenint les dades del repositori 
+https://www.kaggle.com/lantanacamara/hong-kong-horse-racing
+on tenim dos fitxers amb dades de curses de caballs
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+anem a crear els dataset inicialment per sepatar a l'hora de lleguir-los
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+horse.data <- read.csv("race-result-horse.csv")
+race.data <- read.csv("race-result-race.csv")
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+Unifiquem els dos datasets en un a partir de la variable que és comú als dos fitxers i que fa referencia al identificador de la carrera. "race_id"
+```{r}
+dataset <- merge(horse.data, race.data, by = "race_id")
+attach(dataset) # per poder fer referencia directament a les variables
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+mirem com queda ara el dataset
+```{r message= FALSE, warning=FALSE}
+dim(dataset)
+summary(dataset)
+str(dataset)
+```
+tenim com podem veure 30 variables amb 30189 observacions
+
+
+mirem ara de netejar les dades, primer mirant que hi ha en cada una
+```{r message= FALSE, warning=FALSE}
+head(dataset,5)
+```
+
+podem veure que el darrer camp no ens aporta res, ja que son comentaris i els podem eliminar 
+
+
+```{r message= FALSE, warning=FALSE}
+dataset <- dataset[ ,1:29]
+```
+
+mirem ara quins valors s'han de netejar per falta de dades.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+summary(dataset=="")
+summary(dataset=="-1")
+colSums(is.na(dataset))
+```
+
+mirarem també els valors extrems.
