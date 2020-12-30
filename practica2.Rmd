@@ -9,22 +9,59 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+obtenint les dades del repositori 
+https://www.kaggle.com/lantanacamara/hong-kong-horse-racing
+on tenim dos fitxers amb dades de curses de caballs
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+anem a crear els dataset inicialment per sepatar a l'hora de lleguir-los
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+horse.data <- read.csv("race-result-horse.csv")
+race.data <- read.csv("race-result-race.csv")
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+Unifiquem els dos datasets en un a partir de la variable que és comú als dos fitxers i que fa referencia al identificador de la carrera. "race_id"
+```{r}
+dataset <- merge(horse.data, race.data, by = "race_id")
+attach(dataset) # per poder fer referencia directament a les variables
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+mirem com queda ara el dataset
+```{r message= FALSE, warning=FALSE}
+dim(dataset)
+#summary(dataset)
+str(dataset)
+```
+tenim com podem veure 30 variables amb 30189 observacions
+
+
+podem veure que el darrer camp no ens aporta res, ja que son comentaris i els podem eliminar 
+tot i això hi ha més variables que estan repetides o que no aporten informació, com són les variables running_position_X que entenem són les posicions intermitjes de la carrera. No ens aporta informació abans de la carrera, sinó durant aquesta. La variable SRC tampoc ens aporta res més que el nom dels fitxers de dades.la data de la carrera es indiferent per extreure finalment dades. 
+
+* _horse_number_ depend da cada carrera i no identifica el cavall, deixem només el "horse_name"<p>
+
+* __race_number__ també és reduntant amb les altresw variables<p>
+```{r message= FALSE, warning=FALSE}
+eliminar <- c("running_position_1","running_position_2","running_position_3","running_position_4","running_position_5","running_position_6","incident_report","src","race_date","race_number","horse_number","horse_id")
+dataset2 <- dataset[ , !(names(dataset) %in% eliminar)]
+```
+
+
+
+mirem de netejar les dades, primer mirant que hi ha en cada una
+```{r message= FALSE, warning=FALSE}
+head(dataset2,50)
+summary(dataset2)
+```
+
+mirem ara quins valors s'han de netejar per falta de dades.
+mirem variable a variable.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+paste("Nombre de valors nulls:", sum(is.na(race_id)))
+colSums(is.na(dataset2))
+#summary(dataset=="")
+#summary(dataset=="-1")
+
+```
+
+mirarem també els valors extrems.
