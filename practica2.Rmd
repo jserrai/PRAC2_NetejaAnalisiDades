@@ -80,8 +80,6 @@ Un cop ja tenim tots els valors buits amb la mateixa identificació, podem mirar
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 paste("Nombre de valors nulls:", sum(is.na(race_id)))
 colSums(is.na(dataset_clean))
-#summary(dataset=="")
-#summary(dataset=="-1")
 ```
 
 En el nostre cas, no tenim valors buits en les columnes després de netejar les variables. Només en tenim a la variable length_behind_winner. I representa molt poc percentatge de les dades totals:
@@ -101,6 +99,4 @@ colSums(is.na(dataset))
 
 Per a visualitzar els valors extrems, primer escollirem aquelles variables en les quals podem trobar-nos valors extrems.
 De totes les variables del nostre dataset, aquelles que categòriques o identificatives no tindran valors extrems  ("race_id", "horse_name", "jockey", "trainer", "draw", "race_course", "race_name", "race_class", "track", "track_condition", "finishing_position").
-
-
 
