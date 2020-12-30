@@ -46,8 +46,6 @@ eliminar <- c("running_position_1","running_position_2","running_position_3","ru
 dataset2 <- dataset[ , !(names(dataset) %in% eliminar)]
 ```
 
-
-
 mirem de netejar les dades, primer mirant que hi ha en cada una
 ```{r message= FALSE, warning=FALSE}
 head(dataset2,50)
