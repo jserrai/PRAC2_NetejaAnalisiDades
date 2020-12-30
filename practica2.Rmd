@@ -38,7 +38,7 @@ tenim com podem veure 30 variables amb 30189 observacions
 podem veure que el darrer camp no ens aporta res, ja que son comentaris i els podem eliminar 
 tot i això hi ha més variables que estan repetides o que no aporten informació, com són les variables running_position_X que entenem són les posicions intermitjes de la carrera. No ens aporta informació abans de la carrera, sinó durant aquesta. La variable SRC tampoc ens aporta res més que el nom dels fitxers de dades.la data de la carrera es indiferent per extreure finalment dades. 
 
-* _horse_number_ depend da cada carrera i no identifica el cavall, deixem només el "horse_name"<p>
+* __horse_number__ depend da cada carrera i no identifica el cavall, deixem només el "horse_name"<p>
 
 * __race_number__ també és reduntant amb les altresw variables<p>
 ```{r message= FALSE, warning=FALSE}
@@ -61,7 +61,6 @@ paste("Nombre de valors nulls:", sum(is.na(race_id)))
 colSums(is.na(dataset2))
 #summary(dataset=="")
 #summary(dataset=="-1")
-
 ```
 
 mirarem també els valors extrems.
