@@ -210,28 +210,30 @@ paste("Ara el nostre dataset té", nrow(dataset_outliers), "observacions.")
 
 Rescalesm els dos pesos a variables entre 0 i 1
 
-```{r}
+```{r label="1"}
 dataset_clean$actual_weight<-rescale(dataset_clean$actual_weight)
 dataset_clean$declared_horse_weight<-rescale(dataset_clean$declared_horse_weight)
 ```
 
+
 mirem la correlación entre els valors que són numerics, treiem en aquest cas la variable que es vol predir, que es el temps en que ha d'acabar un cavall, i fem la predicció per cada una de les diferents carreres, ja que no es comporten igual i com podem veure hi ha una correlació directe entre el temps de la cursa i la distancia.
 
-```{r}
-str(dataset_clean)
-num <- c(dataset_clean$finishing_position,dataset_clean$race_distance)
-rcorr(as.matrix(num), type = "spearman")
-
+```{r label="corelacio"}
+cor(x=dataset_clean$finish_time, y=dataset_clean$race_distance)
 ```
 
-mirem la resta de variables
 
-```{r}
-str(dataset_clean)
+mirem la resta de variables (treient la variable que tenim corelacionada amb el temps)
+```{r label="rcorr" }
+eliminar <- c("race_distance")
+dataset_clean <- dataset_clean[ , !(names(dataset_clean) %in% eliminar)]
 num <- select_if(dataset_clean, is.numeric)
 rcorr(as.matrix(num), type = "pearson")
-
 ```
+
+en aquest cas veiem com la variable _win_odds_ (la provabilitat de guanyar abans d'iniciar la cursa) té una correlació força alta amb la posició final de la cursa, cosa que es pot entendre per ser un bon cavall.
+En aquest cas, la posició final de la cursa dependrà molt de la resta de cavalls que hi hagui i no del propi cavall, per tant, també es podria eliminar j aqu eno afecta a la predicció del resultat, sinó al resultat de cada cursa.
+
 
 
 

@@ -579,57 +579,12 @@ paste(&quot;Hem eliminat&quot;, (nrow(dataset_clean)-nrow(dataset_outliers)) , &
 <pre class="r"><code>dataset_clean$actual_weight&lt;-rescale(dataset_clean$actual_weight)
 dataset_clean$declared_horse_weight&lt;-rescale(dataset_clean$declared_horse_weight)</code></pre>
 <p>mirem la correlación entre els valors que són numerics, treiem en aquest cas la variable que es vol predir, que es el temps en que ha d’acabar un cavall, i fem la predicció per cada una de les diferents carreres, ja que no es comporten igual i com podem veure hi ha una correlació directe entre el temps de la cursa i la distancia.</p>
-<pre class="r"><code>str(dataset_clean)</code></pre>
-<pre><code>## &#39;data.frame&#39;:    29364 obs. of  17 variables:
-##  $ race_id              : chr  &quot;2014-001&quot; &quot;2014-001&quot; &quot;2014-001&quot; &quot;2014-001&quot; ...
-##  $ finishing_position   : int  1 2 3 4 5 6 7 8 9 10 ...
-##  $ horse_name           : chr  &quot;DOUBLE DRAGON&quot; &quot;PLAIN BLUE BANNER&quot; &quot;GOLDWEAVER&quot; &quot;SUPREME PROFIT&quot; ...
-##  $ jockey               : chr  &quot;B Prebble&quot; &quot;D Whyte&quot; &quot;Y T Cheng&quot; &quot;J Moreira&quot; ...
-##  $ trainer              : chr  &quot;D Cruz&quot; &quot;D E Ferraris&quot; &quot;Y S Tsui&quot; &quot;C S Shum&quot; ...
-##  $ actual_weight        : num  1 1 0.6 0.967 0.733 ...
-##  $ declared_horse_weight: num  0.281 0.374 0.352 0.691 0.505 ...
-##  $ draw                 : chr  &quot;1&quot; &quot;13&quot; &quot;3&quot; &quot;2&quot; ...
-##  $ length_behind_winner : chr  &quot;0&quot; &quot;2&quot; &quot;2&quot; &quot;2&quot; ...
-##  $ finish_time          : num  82.3 82.7 82.7 82.7 83 ...
-##  $ win_odds             : num  3.8 8 5.7 6.1 6.1 24 99 21 10 27 ...
-##  $ race_course          : chr  &quot;Sha Tin&quot; &quot;Sha Tin&quot; &quot;Sha Tin&quot; &quot;Sha Tin&quot; ...
-##  $ race_class           : chr  &quot;Class 5&quot; &quot;Class 5&quot; &quot;Class 5&quot; &quot;Class 5&quot; ...
-##  $ race_distance        : int  1400 1400 1400 1400 1400 1400 1400 1400 1400 1400 ...
-##  $ track_condition      : chr  &quot;GOOD TO FIRM&quot; &quot;GOOD TO FIRM&quot; &quot;GOOD TO FIRM&quot; &quot;GOOD TO FIRM&quot; ...
-##  $ race_name            : chr  &quot;TIM WA HANDICAP&quot; &quot;TIM WA HANDICAP&quot; &quot;TIM WA HANDICAP&quot; &quot;TIM WA HANDICAP&quot; ...
-##  $ track                : chr  &quot;TURF - \&quot;A\&quot; COURSE&quot; &quot;TURF - \&quot;A\&quot; COURSE&quot; &quot;TURF - \&quot;A\&quot; COURSE&quot; &quot;TURF - \&quot;A\&quot; COURSE&quot; ...</code></pre>
-<pre class="r"><code>num &lt;- c(dataset_clean$finishing_position,dataset_clean$race_distance)
-rcorr(as.matrix(num), type = &quot;spearman&quot;)</code></pre>
-<pre><code>##      [,1]
-## [1,]    1
-## 
-## n= 58728 
-## 
-## 
-## P
-##      [,1]
-## [1,]</code></pre>
-<p>mirem la resta de variables</p>
-<pre class="r"><code>str(dataset_clean)</code></pre>
-<pre><code>## &#39;data.frame&#39;:    29364 obs. of  17 variables:
-##  $ race_id              : chr  &quot;2014-001&quot; &quot;2014-001&quot; &quot;2014-001&quot; &quot;2014-001&quot; ...
-##  $ finishing_position   : int  1 2 3 4 5 6 7 8 9 10 ...
-##  $ horse_name           : chr  &quot;DOUBLE DRAGON&quot; &quot;PLAIN BLUE BANNER&quot; &quot;GOLDWEAVER&quot; &quot;SUPREME PROFIT&quot; ...
-##  $ jockey               : chr  &quot;B Prebble&quot; &quot;D Whyte&quot; &quot;Y T Cheng&quot; &quot;J Moreira&quot; ...
-##  $ trainer              : chr  &quot;D Cruz&quot; &quot;D E Ferraris&quot; &quot;Y S Tsui&quot; &quot;C S Shum&quot; ...
-##  $ actual_weight        : num  1 1 0.6 0.967 0.733 ...
-##  $ declared_horse_weight: num  0.281 0.374 0.352 0.691 0.505 ...
-##  $ draw                 : chr  &quot;1&quot; &quot;13&quot; &quot;3&quot; &quot;2&quot; ...
-##  $ length_behind_winner : chr  &quot;0&quot; &quot;2&quot; &quot;2&quot; &quot;2&quot; ...
-##  $ finish_time          : num  82.3 82.7 82.7 82.7 83 ...
-##  $ win_odds             : num  3.8 8 5.7 6.1 6.1 24 99 21 10 27 ...
-##  $ race_course          : chr  &quot;Sha Tin&quot; &quot;Sha Tin&quot; &quot;Sha Tin&quot; &quot;Sha Tin&quot; ...
-##  $ race_class           : chr  &quot;Class 5&quot; &quot;Class 5&quot; &quot;Class 5&quot; &quot;Class 5&quot; ...
-##  $ race_distance        : int  1400 1400 1400 1400 1400 1400 1400 1400 1400 1400 ...
-##  $ track_condition      : chr  &quot;GOOD TO FIRM&quot; &quot;GOOD TO FIRM&quot; &quot;GOOD TO FIRM&quot; &quot;GOOD TO FIRM&quot; ...
-##  $ race_name            : chr  &quot;TIM WA HANDICAP&quot; &quot;TIM WA HANDICAP&quot; &quot;TIM WA HANDICAP&quot; &quot;TIM WA HANDICAP&quot; ...
-##  $ track                : chr  &quot;TURF - \&quot;A\&quot; COURSE&quot; &quot;TURF - \&quot;A\&quot; COURSE&quot; &quot;TURF - \&quot;A\&quot; COURSE&quot; &quot;TURF - \&quot;A\&quot; COURSE&quot; ...</code></pre>
-<pre class="r"><code>num &lt;- select_if(dataset_clean, is.numeric)
+<pre class="r"><code>cor(x=dataset_clean$finish_time, y=dataset_clean$race_distance)</code></pre>
+<pre><code>## [1] 0.9968585</code></pre>
+<p>mirem la resta de variables (treient la variable que tenim corelacionada amb el temps)</p>
+<pre class="r"><code>eliminar &lt;- c(&quot;race_distance&quot;)
+dataset_clean &lt;- dataset_clean[ , !(names(dataset_clean) %in% eliminar)]
+num &lt;- select_if(dataset_clean, is.numeric)
 rcorr(as.matrix(num), type = &quot;pearson&quot;)</code></pre>
 <pre><code>##                       finishing_position actual_weight declared_horse_weight
 ## finishing_position                  1.00         -0.11                 -0.05
@@ -637,14 +592,12 @@ rcorr(as.matrix(num), type = &quot;pearson&quot;)</code></pre>
 ## declared_horse_weight              -0.05          0.03                  1.00
 ## finish_time                         0.03          0.01                 -0.13
 ## win_odds                            0.48         -0.22                 -0.09
-## race_distance                       0.00          0.01                 -0.12
-##                       finish_time win_odds race_distance
-## finishing_position           0.03     0.48          0.00
-## actual_weight                0.01    -0.22          0.01
-## declared_horse_weight       -0.13    -0.09         -0.12
-## finish_time                  1.00    -0.06          1.00
-## win_odds                    -0.06     1.00         -0.07
-## race_distance                1.00    -0.07          1.00
+##                       finish_time win_odds
+## finishing_position           0.03     0.48
+## actual_weight                0.01    -0.22
+## declared_horse_weight       -0.13    -0.09
+## finish_time                  1.00    -0.06
+## win_odds                    -0.06     1.00
 ## 
 ## n= 29364 
 ## 
@@ -656,14 +609,13 @@ rcorr(as.matrix(num), type = &quot;pearson&quot;)</code></pre>
 ## declared_horse_weight 0.0000             0.0000                             
 ## finish_time           0.0000             0.0104        0.0000               
 ## win_odds              0.0000             0.0000        0.0000               
-## race_distance         0.5428             0.0135        0.0000               
-##                       finish_time win_odds race_distance
-## finishing_position    0.0000      0.0000   0.5428       
-## actual_weight         0.0104      0.0000   0.0135       
-## declared_horse_weight 0.0000      0.0000   0.0000       
-## finish_time                       0.0000   0.0000       
-## win_odds              0.0000               0.0000       
-## race_distance         0.0000      0.0000</code></pre>
+##                       finish_time win_odds
+## finishing_position    0.0000      0.0000  
+## actual_weight         0.0104      0.0000  
+## declared_horse_weight 0.0000      0.0000  
+## finish_time                       0.0000  
+## win_odds              0.0000</code></pre>
+<p>en aquest cas veiem com la variable <em>win_odds</em> (la provabilitat de guanyar abans d’iniciar la cursa) té una correlació força alta amb la posició final de la cursa, cosa que es pot entendre per ser un bon cavall. En aquest cas, la posició final de la cursa dependrà molt de la resta de cavalls que hi hagui i no del propi cavall, per tant, també es podria eliminar j aqu eno afecta a la predicció del resultat, sinó al resultat de cada cursa.</p>
 </div>
 </div>
 
