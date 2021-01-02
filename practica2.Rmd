@@ -215,7 +215,17 @@ dataset_clean$actual_weight<-rescale(dataset_clean$actual_weight)
 dataset_clean$declared_horse_weight<-rescale(dataset_clean$declared_horse_weight)
 ```
 
-mirem la correlación entre els valors que són numerics
+mirem la correlación entre els valors que són numerics, treiem en aquest cas la variable que es vol predir, que es el temps en que ha d'acabar un cavall, i fem la predicció per cada una de les diferents carreres, ja que no es comporten igual i com podem veure hi ha una correlació directe entre el temps de la cursa i la distancia.
+
+```{r}
+str(dataset_clean)
+num <- c(dataset_clean$finishing_position,dataset_clean$race_distance)
+rcorr(as.matrix(num), type = "spearman")
+
+```
+
+mirem la resta de variables
+
 ```{r}
 str(dataset_clean)
 num <- select_if(dataset_clean, is.numeric)
