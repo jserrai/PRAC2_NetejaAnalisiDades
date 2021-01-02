@@ -182,6 +182,24 @@ box_wo <- ggplot(dataset_clean) +
 hist_f + hist_aw + hist_dw + hist_wo + box_f + box_aw + box_dw + box_wo +  plot_layout(nrow = 4, ncol = 2)
 ```
 
-> **Ara detectem els outliers de cada una de les variables:**
+> **Ara eliminem els outliers de cada una de les variables:**
 
+Eliminarem tots aquells valors outliers. Tot i així, podem observar que a la variable "win_odds", tots els outliers són els cavalls que tenen més probabilitats de guanyar. Com que el nostre estudi té a veure amb aquests, no eliminarem aquests outliers del nostre dataset i els tindrem en compte pels analisis.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+out_aw <- unlist(ggplot_build(box_aw)[["data"]][[1]][["outliers"]])
+ind_aw <- which(dataset_clean$actual_weight %in% c(out_aw))
+
+out_f <- unlist(ggplot_build(box_f)[["data"]][[1]][["outliers"]])
+ind_f <- which(dataset_clean$finish_time %in% c(out_f))
+
+out_dw <- unlist(ggplot_build(box_dw)[["data"]][[1]][["outliers"]])
+ind_dw <- which(dataset_clean$declared_horse_weight %in% c(out_dw))
+
+dataset_outliers <- dataset_clean[-c(ind_f,ind_dw,ind_aw),]
+
+paste("Hem eliminat", (nrow(dataset_clean)-nrow(dataset_outliers)) , "outliers.")
+paste("Ara el nostre dataset té", nrow(dataset_outliers), "observacions.")
+```
 
