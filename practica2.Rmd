@@ -36,7 +36,7 @@ dim(dataset)
 Abans de netejar les dades, hem de mirar què hi tenim a cada columna. Per fer-ho utilizarem la funció summary() que ens permet visualitzar i fer-nos una idea general general el dataset: 
 
 ```{r message= FALSE, warning=FALSE}
-head(dataset,50)
+#head(dataset,5)
 str(dataset)
 ```
 
@@ -107,20 +107,21 @@ Primer transformem les variables continues a numèriques per poder trobar-ne els
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 dataset_clean$actual_weight <- unlist(lapply(dataset_clean$actual_weight, as.integer))
-dataset_clean$declared_horse_weight <- unlist(lapply(dataset_clean$declared_horse_weight, as.numeric))
+dataset_clean$declared_horse_weight <- unlist(lapply(dataset_clean$declared_horse_weight, as.integer))
 dataset_clean$finish_time <-  period_to_seconds(ms(dataset_clean$finish_time))
 dataset_clean$win_odds <- unlist(lapply(dataset_clean$win_odds, as.numeric))
-dataset_clean$race_distance <- unlist(lapply(dataset_clean$race_distance, as.numeric))
+dataset_clean$race_distance <- unlist(lapply(dataset_clean$race_distance, as.integer))
 ```
 
 
-> Visualitzem els outliers:
+> **Visualitzem els outliers:**
 
 En el nostre dataset, hi tenim diverses curses de cavalls, aquestes tenen diferents distàncies de 1000m a 2400m. Hem de determinar es outliers tenint en compte la distància de la cursa, sinó aquest factor crearà un bias en els costres resultats.
 
-Utilitzem una representació gràfica (histograma i boxplot), per a visualitzar els outliers:
+Utilitzem una representació gràfica (histograma i boxplot), per a visualitzar i detectar els outliers:
 
-```{r echo=TRUE, message=FALSE, warning=FALSE}
+```{r echo=TRUE, message=FALSE, warning=FALSE, fig.width=10, fig.height=15}
+
 hist_f <- ggplot(data = dataset_clean, aes(x=dataset_clean$finish_time)) + 
   facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y", space='free') +
   geom_histogram(binwidth=1, fill="#0c4c8a") +
@@ -178,12 +179,9 @@ box_wo <- ggplot(dataset_clean) +
   ylab("") +
   theme_minimal()
 
-(hist_f | hist_aw ) /
-(hist_dw | hist_wo) /
-(box_f | box_aw ) /
-(box_dw | box_wo)
+hist_f + hist_aw + hist_dw + hist_wo + box_f + box_aw + box_dw + box_wo +  plot_layout(nrow = 4, ncol = 2)
 ```
 
-> Detectem els outliers:
+> **Ara detectem els outliers de cada una de les variables:**
 
 
