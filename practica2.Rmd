@@ -13,6 +13,7 @@ library(patchwork)
 library(dplyr)
 library(scales)
 library(Hmisc)
+library(gridExtra)
 ```
 
 ## 1. Integració i selecció de les dades d’interès a analitzar:
@@ -25,7 +26,7 @@ horse.data <- read.csv("./race-result-horse.csv")
 race.data <- read.csv("./race-result-race.csv")
 ```
 
-Unifiquem els dos datasets en un a partir de la variable comú als dos fitxers. Aquesta fa referencia al identificador de la carrera: "race_id"
+Unifiquem els dos datasets en un a partir de la variable comú als dos fitxers. Aquesta fa referencia al identificador de la carrera: __race_id__
 
 ```{r}
 dataset <- merge(horse.data, race.data, by = "race_id")
@@ -34,7 +35,7 @@ dim(dataset)
 ```
 
 
-## 2 .Neteja de les dades:
+## 2. Neteja de les dades:
 
 Abans de netejar les dades, hem de mirar què hi tenim a cada columna. Per fer-ho utilizarem la funció summary() que ens permet visualitzar i fer-nos una idea general general el dataset: 
 
@@ -46,15 +47,15 @@ colnames(dataset)
 
 Com podem veure, tenim 30 variables amb 30189 observacions. Com que hi ha moltes variables que estan repetides o que no aporten una informació vàlida, n'eliminarem algunes:
 
-1. "incident_report": Són comentaris sobre la cursa, no utilitzarem aquesta variable per als nostres anàlisis, per tant els podem eliminar.
-2. "running_position_X": Entenem que són les posicions intermitjes de la carrera. No ens aporta informació sobre abans de la carrera, sinó durant aquesta.
-3. "SRC": Tampoc ens aporta res més que el nom dels fitxers de dades.
-4. "horse_number": Depèn de cada cursa i no identifica el cavall, per tant deixem només el "horse_name".
-5. "race_number": També és reduntant amb les altres variables.
-6. "race_date": La data de la carrera és indiferent per l'anàlisi de les dades. 
-7. "sectional_time": Tindrem en compte només el temps total de la carrera, no de cada volta.
-8. "horse_id" : Ja tenim un identificador pel cavall, aques és redundant.
-9. “length_behind_winner” : És redundant, ja tenim la posició final de la cursa.
+1. __incident_report__: Són comentaris sobre la cursa, no utilitzarem aquesta variable per als nostres anàlisis, per tant els podem eliminar.
+2. __running_position_X__: Entenem que són les posicions intermitjes de la carrera. No ens aporta informació sobre abans de la carrera, sinó durant aquesta.
+3. __SRC__: Tampoc ens aporta res més que el nom dels fitxers de dades.
+4. __horse_number__: Depèn de cada cursa i no identifica el cavall, per tant deixem només el __horse_name__.
+5. __race_number__: També és reduntant amb les altres variables.
+6. __race_date__: La data de la carrera és indiferent per l'anàlisi de les dades. 
+7. __sectional_time__: Tindrem en compte només el temps total de la carrera, no de cada volta.
+8. __horse_id__ : Ja tenim un identificador pel cavall, aques és redundant.
+9. __length_behind_winner__ : És redundant, ja tenim la posició final de la cursa.
 
 ```{r message= FALSE, warning=FALSE}
 eliminar <- c("running_position_1","running_position_2","running_position_3","running_position_4","running_position_5","running_position_6","incident_report","src","race_date","race_number","horse_number","horse_id","sectional_time","length_behind_winner")
@@ -67,8 +68,8 @@ dataset_clean[] <- lapply(dataset_clean, as.character)
 
 
 Fent una ullada al dataset, veiem que alguns valors NA estan representats com a "---", "N", "SH" o "HD". Canviarem aquests valors a NA per a poder treballar amb la mateixa notació. 
-A més a més, a la columna de "length_behind_winner" (la distància del cavall en qüestió en relació al primer), ens trobem valors representats com a "-". Aquests corresponen al guanyador de la cursa, el quel no té distància sobre sí mateix, és a dir no són valors buits sinó que representen distància 0. Modificarem la notació per "0".
-A la variable finishing_position, tenim diversos valors no numèrics, aquests estan representats amb diferents lletres. Per a utilitzar la mateixa notació, canviarem la variable a numèrica i aquells valors no numèrics passaran a estar representats amb "NA".
+A més a més, a la columna de __length_behind_winner__ (la distància del cavall en qüestió en relació al primer), ens trobem valors representats com a "-". Aquests corresponen al guanyador de la cursa, el quel no té distància sobre sí mateix, és a dir no són valors buits sinó que representen distància 0. Modificarem la notació per "0".
+A la variable __finishing_position__, tenim diversos valors no numèrics, aquests estan representats amb diferents lletres. Per a utilitzar la mateixa notació, canviarem la variable a numèrica i aquells valors no numèrics passaran a estar representats amb "NA".
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 dataset_clean[dataset_clean == "-"] <- "0"
@@ -87,7 +88,7 @@ Un cop ja tenim tots els valors buits amb la mateixa identificació, podem mirar
 colSums(is.na(dataset_clean))
 ```
 
-Podem observar que tenim alguns valors buits al nostre dataset. Primer ens centrarem en la variable finishing_position. Determinem quin % de valors buits representa, per a poder decidir com actuem:
+Podem observar que tenim alguns valors buits al nostre dataset. Primer ens centrarem en la variable __finishing_position__. Determinem quin % de valors buits representa, per a poder decidir com actuem:
 
 ```{r message= FALSE, warning=FALSE}
 paste("Proporció de valors nulls de la variable finishing_position:", format(sum(is.na(dataset_clean$finishing_position))/nrow(dataset_clean), format = "f", digits = 3), "%")
@@ -114,11 +115,10 @@ colSums(is.na(dataset))
 ### 2.2. Identificació i tractament de valors extrems
 
 Per a visualitzar els valors extrems, primer escollirem aquelles variables en les quals podem trobar-nos valors extrems.
-De totes les variables del nostre dataset, només les variables continues poden tenir valors extrems, aquelles que categòriques o identificatives no en tindran ("race_id", "horse_name", "jockey", "trainer", "draw", "race_course", "race_name", "race_class", "track", "track_condition", "finishing_position", "length_behind_winner","race_distance" ).
+De totes les variables del nostre dataset, només les variables continues poden tenir valors extrems, aquelles que categòriques o identificatives no en tindran ( __race_id__, __horse_name__, __jockey__, __trainer__, __draw__, __race_course__, __race_name__, __race_class__, __track__, __track_condition__, __finishing_position__, __length_behind_winner__,__race_distance__ ).
 Primer transformem les variables continues a numèriques per poder trobar-ne els outliers.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-
 dataset_clean$actual_weight <- unlist(lapply(dataset_clean$actual_weight, as.integer))
 dataset_clean$declared_horse_weight <- unlist(lapply(dataset_clean$declared_horse_weight, as.integer))
 dataset_clean$finish_time <-  period_to_seconds(ms(dataset_clean$finish_time))
@@ -210,13 +210,38 @@ ind_dw <- which(dataset_clean$declared_horse_weight %in% c(out_dw))
 dataset_outliers <- dataset_clean[-c(ind_f,ind_dw,ind_aw),]
 paste("Hem eliminat", (nrow(dataset_clean)-nrow(dataset_outliers)) , "outliers.")
 paste("Ara el nostre dataset té", nrow(dataset_outliers), "observacions.")
+dataset_clean <- dataset_outliers
 ```
+
+## 3. Anàlisi de les dades.
+
+### 3.1.  Selecció dels grups de dades que es volen analitzar/comparar (planificació dels anàlisis a aplicar).
+
+### 3.2.  Comprovació de la normalitat i homogeneïtat de la variància.
+```{r echo=TRUE, message=FALSE, warning=FALSE, fig.width=10, fig.height=10}
+hist <- list()
+i = 1
+for (column in dataset_numerical) {
+    dev.new()
+    hist[[i]] <- ggplot(data = dataset_numerical, aes(x=column)) + 
+    facet_grid(rows = vars(dataset_numerical$race_distance), scale = "free_y", space='free_y') +
+    geom_histogram(binwidth=1, fill="#0c4c8a") +
+    theme_minimal() +
+    ggtitle(paste("Histograma -", column))
+    i = i + 1
+}
+grid.arrange(hist[[1]],hist[[2]],hist[[3]],hist[[4]],hist[[5]], ncol=2)
+
+```
+
 
 Rescalesm els dos pesos a variables entre 0 i 1
 
 ```{r label="1"}
 dataset_clean$actual_weight<-rescale(dataset_clean$actual_weight)
 dataset_clean$declared_horse_weight<-rescale(dataset_clean$declared_horse_weight)
+dataset_clean$finish_time<-rescale(dataset_clean$finish_time)
+dataset_clean$win_odds<-rescale(dataset_clean$win_odds)
 ```
 
 
@@ -229,8 +254,8 @@ cor(x=dataset_clean$finish_time, y=dataset_clean$race_distance)
 
 mirem la resta de variables (treient la variable que tenim corelacionada amb el temps)
 ```{r label="rcorr" }
-eliminar <- c("race_distance")
-dataset_clean <- dataset_clean[ , !(names(dataset_clean) %in% eliminar)]
+#eliminar <- c("race_distance")
+#dataset_clean <- dataset_clean[ , !(names(dataset_clean) %in% eliminar)]
 num <- select_if(dataset_clean, is.numeric)
 
 cat <- select_if(dataset_clean, is.character)
@@ -240,11 +265,12 @@ for (name in colnames(cat)) {
 }
 
 dataset_numerical <- data.frame(num,cat)
-rcorr(as.matrix(dataset_numerical), type = "pearson")
-
+cor <- rcorr(as.matrix(dataset_numerical), type = "pearson")
+heatmap(cor$r)
 
 ```
 
 en aquest cas veiem com la variable _win_odds_ (la provabilitat de guanyar abans d'iniciar la cursa) té una correlació força alta amb la posició final de la cursa, cosa que es pot entendre per ser un bon cavall.
 En aquest cas, la posició final de la cursa dependrà molt de la resta de cavalls que hi hagui i no del propi cavall, per tant, també es podria eliminar j aqu eno afecta a la predicció del resultat, sinó al resultat de cada cursa.
+
 
