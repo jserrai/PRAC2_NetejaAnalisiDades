@@ -7,6 +7,9 @@ output: pdf_document
 
 ```{r setup, include=FALSE} 
 knitr::opts_chunk$set(echo = TRUE)
+library(lubridate)
+library(ggplot2)
+library(patchwork)
 ```
 
 ## 1. Integració i selecció de les dades d’interès a analitzar:
@@ -45,9 +48,10 @@ Com podem veure, tenim 30 variables amb 30189 observacions. Com que hi ha moltes
 4. "horse_number": Depèn de cada cursa i no identifica el cavall, per tant deixem només el "horse_name".
 5. "race_number": També és reduntant amb les altres variables.
 6. "race_date": La data de la carrera és indiferent per l'anàlisi de les dades. 
+7. "sectional_time": Tindrem en compte només el temps total de la carrera, no de cada volta.
 
 ```{r message= FALSE, warning=FALSE}
-eliminar <- c("running_position_1","running_position_2","running_position_3","running_position_4","running_position_5","running_position_6","incident_report","src","race_date","race_number","horse_number","horse_id")
+eliminar <- c("running_position_1","running_position_2","running_position_3","running_position_4","running_position_5","running_position_6","incident_report","src","race_date","race_number","horse_number","horse_id","sectional_time")
 dataset_clean <- dataset[ , !(names(dataset) %in% eliminar)]
 dataset_clean[] <- lapply(dataset_clean, as.character)
 ```
@@ -59,7 +63,7 @@ Fent una ullada al dataset, veiem que a la variable finishing_position, hi ha va
 Per tant, eliminem aquestes files del dataset.
 
 ```{r message= FALSE, warning=FALSE}
-dataset_clean$finishing_position <- lapply(dataset_clean$finishing_position, as.integer) # tots aquells valors que no s'hagin pogut transformar són els no numèrics, i restaran com a "NA".
+dataset_clean$finishing_position <- unlist(lapply(dataset_clean$finishing_position, as.integer)) # tots aquells valors que no s'hagin pogut transformar són els no numèrics, i restaran com a "NA".
 
 dataset_clean <- dataset_clean[!(is.na(dataset_clean$finishing_position)),] # eliminem les files sense resultats.
 ```
@@ -98,5 +102,88 @@ colSums(is.na(dataset))
 ### 2.2. Identificació i tractament de valors extrems
 
 Per a visualitzar els valors extrems, primer escollirem aquelles variables en les quals podem trobar-nos valors extrems.
-De totes les variables del nostre dataset, aquelles que categòriques o identificatives no tindran valors extrems  ("race_id", "horse_name", "jockey", "trainer", "draw", "race_course", "race_name", "race_class", "track", "track_condition", "finishing_position").
+De totes les variables del nostre dataset, només les variables continues poden tenir valors extrems, aquelles que categòriques o identificatives no en tindran ("race_id", "horse_name", "jockey", "trainer", "draw", "race_course", "race_name", "race_class", "track", "track_condition", "finishing_position", "length_behind_winner","race_distance" ).
+Primer transformem les variables continues a numèriques per poder trobar-ne els outliers.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+dataset_clean$actual_weight <- unlist(lapply(dataset_clean$actual_weight, as.integer))
+dataset_clean$declared_horse_weight <- unlist(lapply(dataset_clean$declared_horse_weight, as.numeric))
+dataset_clean$finish_time <-  period_to_seconds(ms(dataset_clean$finish_time))
+dataset_clean$win_odds <- unlist(lapply(dataset_clean$win_odds, as.numeric))
+dataset_clean$race_distance <- unlist(lapply(dataset_clean$race_distance, as.numeric))
+```
+
+
+> Visualitzem els outliers:
+
+En el nostre dataset, hi tenim diverses curses de cavalls, aquestes tenen diferents distàncies de 1000m a 2400m. Hem de determinar es outliers tenint en compte la distància de la cursa, sinó aquest factor crearà un bias en els costres resultats.
+
+Utilitzem una representació gràfica (histograma i boxplot), per a visualitzar els outliers:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+hist_f <- ggplot(data = dataset_clean, aes(x=dataset_clean$finish_time)) + 
+  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y", space='free') +
+  geom_histogram(binwidth=1, fill="#0c4c8a") +
+  theme_minimal() +
+  ggtitle("Histograma - Finnish time")
+
+hist_aw <- ggplot(data = dataset_clean, aes(x=dataset_clean$actual_weight)) + 
+  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y", space='free') +
+  geom_histogram(binwidth=1, fill="#0c4c8a") +
+  theme_minimal() +
+  ggtitle("Histograma - Actual Weight")
+
+hist_dw <- ggplot(data = dataset_clean, aes(x=dataset_clean$declared_horse_weight)) + 
+  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y", space='free') +
+  geom_histogram(binwidth=1, fill="#0c4c8a") +
+  theme_minimal() +
+  ggtitle("Histograma - Declared Weight")
+
+hist_wo <- ggplot(data = dataset_clean, aes(x=dataset_clean$win_odds)) + 
+  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y", space='free') +
+  geom_histogram(binwidth=1, fill="#0c4c8a") +
+  theme_minimal() +
+  ggtitle("Histograma - Win Odds")
+
+
+box_f <- ggplot(dataset_clean) +
+  aes(x = "", y = dataset_clean$finish_time) +
+  facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
+  geom_boxplot(fill = "#0c4c8a", outlier.colour = "red") +
+  ggtitle("Boxplot - Finnish time") +
+  ylab("") +
+  theme_minimal()
+
+box_aw <- ggplot(dataset_clean) +
+  aes(x = "", y = dataset_clean$actual_weight) +
+  facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
+  geom_boxplot(fill = "#0c4c8a",outlier.colour = "red") +
+  ggtitle("Boxplot - Actual Weight") +
+  ylab("") +
+  theme_minimal()
+
+box_dw <- ggplot(dataset_clean) +
+  aes(x = "", y = dataset_clean$declared_horse_weight) +
+  facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
+  geom_boxplot(fill = "#0c4c8a",outlier.colour = "red") +
+  ggtitle("Boxplot - Declared weight") +
+  ylab("") +
+  theme_minimal()
+
+box_wo <- ggplot(dataset_clean) +
+  aes(x = "", y = dataset_clean$win_odds) +
+  facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
+  geom_boxplot(fill = "#0c4c8a",outlier.colour = "red") +
+  ggtitle("Boxplot - Win Odds") +
+  ylab("") +
+  theme_minimal()
+
+(hist_f | hist_aw ) /
+(hist_dw | hist_wo) /
+(box_f | box_aw ) /
+(box_dw | box_wo)
+```
+
+> Detectem els outliers:
+
 
