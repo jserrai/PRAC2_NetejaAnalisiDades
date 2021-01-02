@@ -2,7 +2,7 @@
 title: "practica2"
 author: "Paula Jordi"
 date: "30/12/2020"
-output: pdf_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE} 
@@ -10,6 +10,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(lubridate)
 library(ggplot2)
 library(patchwork)
+library(dplyr)
+library(scales)
+library(Hmisc)
 ```
 
 ## 1. Integració i selecció de les dades d’interès a analitzar:
@@ -40,15 +43,15 @@ Abans de netejar les dades, hem de mirar què hi tenim a cada columna. Per fer-h
 str(dataset)
 ```
 
-Com podem veure, tenim 30 variables amb 30189 observacions. Com que hi ha moltes variables que estan repetides o que no aporten una infromació vàlida, n'eliminarem algunes:
+Com podem veure, tenim 30 variables amb 30189 observacions. Com que hi ha moltes variables que estan repetides o que no aporten una informació vàlida, n'eliminarem algunes:
 
-1. "incident_report": Són comentaris sobre la cursa, no utilitzarem aquesta variable per als nostres anàlisis, per tant els podem eliminar.
-2. "running_position_X": Entenem que són les posicions intermitjes de la carrera. No ens aporta informació sobre abans de la carrera, sinó durant aquesta.
-3. "SRC": Tampoc ens aporta res més que el nom dels fitxers de dades.
-4. "horse_number": Depèn de cada cursa i no identifica el cavall, per tant deixem només el "horse_name".
-5. "race_number": També és reduntant amb les altres variables.
-6. "race_date": La data de la carrera és indiferent per l'anàlisi de les dades. 
-7. "sectional_time": Tindrem en compte només el temps total de la carrera, no de cada volta.
+1. __incident_report__: Són comentaris sobre la cursa, no utilitzarem aquesta variable per als nostres anàlisis, per tant els podem eliminar.
+2. __running_position_X__: Entenem que són les posicions intermitjes de la carrera. No ens aporta informació sobre abans de la carrera, sinó durant aquesta.
+3. __SRC__: Tampoc ens aporta res més que el nom dels fitxers de dades.
+4. __horse_number__: Depèn de cada cursa i no identifica el cavall, per tant deixem només el "horse_name".
+5. __race_number__: També és reduntant amb les altres variables.
+6. __race_date__: La data de la carrera és indiferent per l'anàlisi de les dades. 
+7. __sectional_time__: Tindrem en compte només el temps total de la carrera, no de cada volta.
 
 ```{r message= FALSE, warning=FALSE}
 eliminar <- c("running_position_1","running_position_2","running_position_3","running_position_4","running_position_5","running_position_6","incident_report","src","race_date","race_number","horse_number","horse_id","sectional_time")
@@ -57,10 +60,12 @@ dataset_clean[] <- lapply(dataset_clean, as.character)
 ```
 
 
+*****
+
 ### 2.1. Les dades contenen zeros o elements buits? Com gestionaries aquests casos?
 
-Fent una ullada al dataset, veiem que a la variable finishing_position, hi ha valors no numèrics. Aquests no ens aporten informació útil per a obtenir el nostre resultat.
-Per tant, eliminem aquestes files del dataset.
+
+Fent una ullada al dataset, veiem que a la variable _finishing_position_, hi ha valors no numèrics. Aquests no ens aporten informació útil per a obtenir el nostre resultat. Per tant, eliminem aquestes files del dataset.
 
 ```{r message= FALSE, warning=FALSE}
 dataset_clean$finishing_position <- unlist(lapply(dataset_clean$finishing_position, as.integer)) # tots aquells valors que no s'hagin pogut transformar són els no numèrics, i restaran com a "NA".
@@ -69,7 +74,7 @@ dataset_clean <- dataset_clean[!(is.na(dataset_clean$finishing_position)),] # el
 ```
 
 Fent una ullada al dataset, veiem que alguns valors NA estan representats com a "---", "N", "SH" o "HD". Canviarem aquests valors a NA per a poder treballar amb la mateixa notació. 
-A més a més, a la columna de "length_behind_winner" (la distància del cavall en qüestió en relació al primer), ens trobem valors representats com a "-". Aquests corresponen al guanyador de la cursa, el quel no té distància sobre sí mateix, és a dir no són valors buits sinó que representen distància 0. Modificarem la notació per "0".
+A més a més, a la columna de "length_behind_winner" (la distància del cavall en qüestió en relació al primer), ens trobem valors representats com a "-". Aquests corresponen al guanyador de la cursa, el qual no té distància sobre sí mateix, és a dir, no són valors buits sinó que representen distància 0 sobre si mateix. Modificarem la notació per "0".
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 dataset_clean[dataset_clean == "-"] <- "0"
@@ -86,7 +91,7 @@ paste("Nombre de valors nulls:", sum(is.na(race_id)))
 colSums(is.na(dataset_clean))
 ```
 
-En el nostre cas, no tenim valors buits en les columnes després de netejar les variables. Només en tenim a la variable length_behind_winner. I representa molt poc percentatge de les dades totals:
+En el nostre cas, no tenim valors buits en les columnes després de netejar les variables. Només en tenim a la variable _length_behind_winner_. I representa molt poc percentatge de les dades totals:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 paste("Proporció de valors nulls de la variable length_behind_winner:", format(sum(is.na(dataset_clean$length_behind_winner))/nrow(dataset_clean), format = "f", digits = 3), "%")
@@ -95,7 +100,6 @@ paste("Proporció de valors nulls de la variable length_behind_winner:", format(
 Tot i així, si mirem al dataset original, veiem que hi havia bastants valors buits. Aquests, estaven concentrats en les columnes que hem eliminat perque no ens aportaven informació útil.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-#summary(dataset[,-30])
 colSums(is.na(dataset))
 ```
 
@@ -116,7 +120,7 @@ dataset_clean$race_distance <- unlist(lapply(dataset_clean$race_distance, as.int
 
 > **Visualitzem els outliers:**
 
-En el nostre dataset, hi tenim diverses curses de cavalls, aquestes tenen diferents distàncies de 1000m a 2400m. Hem de determinar es outliers tenint en compte la distància de la cursa, sinó aquest factor crearà un bias en els costres resultats.
+En el nostre dataset, hi tenim diverses curses de cavalls, aquestes tenen diferents distàncies de 1000m a 2400m. Hem de determinar els outliers tenint en compte la distància de la cursa, sinó aquest factor crearà un bias en els costres resultats.
 
 Utilitzem una representació gràfica (histograma i boxplot), per a visualitzar i detectar els outliers:
 
@@ -184,7 +188,7 @@ hist_f + hist_aw + hist_dw + hist_wo + box_f + box_aw + box_dw + box_wo +  plot_
 
 > **Ara eliminem els outliers de cada una de les variables:**
 
-Eliminarem tots aquells valors outliers. Tot i així, podem observar que a la variable "win_odds", tots els outliers són els cavalls que tenen més probabilitats de guanyar. Com que el nostre estudi té a veure amb aquests, no eliminarem aquests outliers del nostre dataset i els tindrem en compte pels analisis.
+Eliminarem tots aquells valors outliers. Tot i així, podem observar que a la variable _win_odds_, tots els outliers són els cavalls que tenen més probabilitats de guanyar. Com que el nostre estudi té a veure amb aquests, no eliminarem aquests outliers del nostre dataset i els tindrem en compte pels analisis posteriors.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -201,5 +205,23 @@ dataset_outliers <- dataset_clean[-c(ind_f,ind_dw,ind_aw),]
 
 paste("Hem eliminat", (nrow(dataset_clean)-nrow(dataset_outliers)) , "outliers.")
 paste("Ara el nostre dataset té", nrow(dataset_outliers), "observacions.")
+
 ```
+
+Rescalesm els dos pesos a variables entre 0 i 1
+
+```{r}
+dataset_clean$actual_weight<-rescale(dataset_clean$actual_weight)
+dataset_clean$declared_horse_weight<-rescale(dataset_clean$declared_horse_weight)
+```
+
+mirem la correlación entre els valors que són numerics
+```{r}
+str(dataset_clean)
+num <- select_if(dataset_clean, is.numeric)
+rcorr(as.matrix(num), type = "pearson")
+
+```
+
+
 
