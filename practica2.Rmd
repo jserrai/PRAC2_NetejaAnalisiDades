@@ -238,7 +238,7 @@ for (name in colnames(cat)) {
 }
 
 dataset_numerical <- data.frame(num,cat)
-rcorr(as.matrix(num), type = "pearson")
+rcorr(as.matrix(dataset_numerical), type = "pearson")
 
 
 ```
