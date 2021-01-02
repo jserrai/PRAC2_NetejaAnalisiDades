@@ -59,6 +59,7 @@ Com podem veure, tenim 30 variables amb 30189 observacions. Com que hi ha moltes
 ```{r message= FALSE, warning=FALSE}
 eliminar <- c("running_position_1","running_position_2","running_position_3","running_position_4","running_position_5","running_position_6","incident_report","src","race_date","race_number","horse_number","horse_id","sectional_time","length_behind_winner")
 dataset_clean <- dataset[ , !(names(dataset) %in% eliminar)]
+dataset_clean[] <- lapply(dataset_clean, as.character)
 ```
 
 
@@ -232,7 +233,8 @@ eliminar <- c("race_distance")
 dataset_clean <- dataset_clean[ , !(names(dataset_clean) %in% eliminar)]
 num <- select_if(dataset_clean, is.numeric)
 
-cat <- select_if(dataset_clean, is.factor)
+cat <- select_if(dataset_clean, is.character)
+cat[] <- lapply(cat, as.factor)
 for (name in colnames(cat)) {
   cat[name] <- unlist(lapply(cat[name], as.numeric))
 }
