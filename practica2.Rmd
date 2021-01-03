@@ -163,7 +163,7 @@ box_f <- ggplot(dataset_clean) +
   facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
   geom_boxplot(fill = "#0c4c8a", outlier.colour = "red") +
   ggtitle("Boxplot - Finnish time") +
-  ylab("") +
+  ylab("") + xlab("race distance") + 
   theme_minimal()
 
 box_aw <- ggplot(dataset_clean) +
@@ -171,7 +171,7 @@ box_aw <- ggplot(dataset_clean) +
   facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
   geom_boxplot(fill = "#0c4c8a",outlier.colour = "red") +
   ggtitle("Boxplot - Actual Weight") +
-  ylab("") +
+  ylab("") + xlab("race distance") +
   theme_minimal()
 
 box_dw <- ggplot(dataset_clean) +
@@ -179,7 +179,7 @@ box_dw <- ggplot(dataset_clean) +
   facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
   geom_boxplot(fill = "#0c4c8a",outlier.colour = "red") +
   ggtitle("Boxplot - Declared weight") +
-  ylab("") +
+  ylab("") + xlab("race distance") +
   theme_minimal()
 
 box_wo <- ggplot(dataset_clean) +
@@ -187,7 +187,7 @@ box_wo <- ggplot(dataset_clean) +
   facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
   geom_boxplot(fill = "#0c4c8a",outlier.colour = "red") +
   ggtitle("Boxplot - Win Odds") +
-  ylab("") +
+  ylab("") + xlab("race distance") +
   theme_minimal()
 
 hist_f + hist_aw + hist_dw + hist_wo + box_f + box_aw + box_dw + box_wo +  plot_layout(nrow = 4, ncol = 2)
@@ -220,6 +220,8 @@ dataset_clean <- dataset_outliers
 ### 3.2.  Comprovació de la normalitat i homogeneïtat de la variància.
 ```{r echo=TRUE, message=FALSE, warning=FALSE, fig.width=10, fig.height=10}
 hist <- list()
+dataset_numerical<- select_if(dataset_clean, is.numeric)
+
 i = 1
 for (column in dataset_numerical) {
     dev.new()
@@ -252,7 +254,7 @@ cor(x=dataset_clean$finish_time, y=dataset_clean$race_distance)
 ```
 
 
-mirem la resta de variables (treient la variable que tenim corelacionada amb el temps)
+mirem la resta de variables (treient la variable que tenim correlacionada amb el temps)
 ```{r label="rcorr" }
 #eliminar <- c("race_distance")
 #dataset_clean <- dataset_clean[ , !(names(dataset_clean) %in% eliminar)]
@@ -271,6 +273,22 @@ heatmap(cor$r)
 ```
 
 en aquest cas veiem com la variable _win_odds_ (la provabilitat de guanyar abans d'iniciar la cursa) té una correlació força alta amb la posició final de la cursa, cosa que es pot entendre per ser un bon cavall.
-En aquest cas, la posició final de la cursa dependrà molt de la resta de cavalls que hi hagui i no del propi cavall, per tant, també es podria eliminar j aqu eno afecta a la predicció del resultat, sinó al resultat de cada cursa.
+
+En aquest cas, la posició final de la cursa dependrà molt de la resta de cavalls que hi hagui i no del propi cavall, per tant, també es podria eliminar ja que no afecta a la predicció del resultat, sinó al resultat de cada cursa.
+
+
+Anem a veure la normalitat i homogeneitat de la variança
+mirem primer com estan distribuides les dades. i comprovem si compleixen amb la hipotesi de la distribució normal de les dades.
+```{r} 
+hist(dataset_clean$finish_time)
+shapiro.test(dataset_clean$finish_time[1:5000]) #només precesa entre 3 i 5000 valors. mirar si falten valors fent aleatori la seleccio dels 5000
+```
+
+
+
+```{r} 
+hist(dataset_clean$declared_horse_weight)
+shapiro.test(dataset_clean$declared_horse_weight[1:5000]) #només precesa entre 3 i 5000 valors.
+```
 
 
