@@ -14,6 +14,7 @@ library(dplyr)
 library(scales)
 library(Hmisc)
 library(gridExtra)
+library(ggpubr)
 ```
 
 ## 1. Integració i selecció de les dades d’interès a analitzar:
@@ -91,7 +92,8 @@ colSums(is.na(dataset_clean))
 Podem observar que tenim alguns valors buits al nostre dataset. Primer ens centrarem en la variable __finishing_position__. Determinem quin % de valors buits representa, per a poder decidir com actuem:
 
 ```{r message= FALSE, warning=FALSE}
-paste("Proporció de valors nulls de la variable finishing_position:", format(sum(is.na(dataset_clean$finishing_position))/nrow(dataset_clean), format = "f", digits = 3), "%")
+paste("Proporció de valors nulls de la variable finishing_position:", format((sum(is.na(dataset_clean$finishing_position))/nrow(dataset_clean))*100, format = "f", digits = 3), "%")
+
 ```
 
 Veiem que representa un valor molt baix de totes les nostres dades, així que aquest cas el podem gestionar eliminant les observacions nules. Si representés una proporció més gran de les nostres dades, al voltant de 15-20% hauriem d'imputar els missing values, utilitzant un anàlisi de regressió. 
@@ -99,7 +101,6 @@ Observem quans valors nuls tenim ara:
 
 ```{r message= FALSE, warning=FALSE}
 dataset_clean <- dataset_clean[!(is.na(dataset_clean$finishing_position)),] # eliminem les files sense resultats.
-
 colSums(is.na(dataset_clean))
 ```
 
@@ -109,7 +110,7 @@ Tot i així, si mirem al dataset original, veiem que hi havia bastants valors bu
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 #summary(dataset[,-30])
-colSums(is.na(dataset))
+colSums(is.na(dataset[,eliminar]))
 ```
 
 ### 2.2. Identificació i tractament de valors extrems
@@ -128,32 +129,32 @@ dataset_clean$race_distance <- unlist(lapply(dataset_clean$race_distance, as.int
 
 
 > **Visualitzem els outliers:**
-
 En el nostre dataset, hi tenim diverses curses de cavalls, aquestes tenen diferents distàncies de 1000m a 2400m. Hem de determinar els outliers tenint en compte la distància de la cursa, sinó aquest factor crearà un bias en els costres resultats.
 
 Utilitzem una representació gràfica (histograma i boxplot), per a visualitzar i detectar els outliers:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, fig.width=10, fig.height=15}
+
 hist_f <- ggplot(data = dataset_clean, aes(x=dataset_clean$finish_time)) + 
-  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y", space='free') +
+  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y") +
   geom_histogram(binwidth=1, fill="#0c4c8a") +
   theme_minimal() +
   ggtitle("Histograma - Finnish time")
 
 hist_aw <- ggplot(data = dataset_clean, aes(x=dataset_clean$actual_weight)) + 
-  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y", space='free') +
+  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y") +
   geom_histogram(binwidth=1, fill="#0c4c8a") +
   theme_minimal() +
   ggtitle("Histograma - Actual Weight")
 
 hist_dw <- ggplot(data = dataset_clean, aes(x=dataset_clean$declared_horse_weight)) + 
-  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y", space='free') +
+  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y") +
   geom_histogram(binwidth=1, fill="#0c4c8a") +
   theme_minimal() +
   ggtitle("Histograma - Declared Weight")
 
 hist_wo <- ggplot(data = dataset_clean, aes(x=dataset_clean$win_odds)) + 
-  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y", space='free') +
+  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y") +
   geom_histogram(binwidth=1, fill="#0c4c8a") +
   theme_minimal() +
   ggtitle("Histograma - Win Odds")
@@ -190,23 +191,19 @@ box_wo <- ggplot(dataset_clean) +
   ylab("") + xlab("race distance") +
   theme_minimal()
 
-hist_f + hist_aw + hist_dw + hist_wo + box_f + box_aw + box_dw + box_wo +  plot_layout(nrow = 4, ncol = 2)
+hist_f + hist_aw + hist_dw + hist_wo + box_f + box_aw + box_dw + box_wo + plot_layout(nrow = 4, ncol = 2)
 ```
 
 > **Ara eliminem els outliers de cada una de les variables:**
-
 Eliminarem tots aquells valors outliers. Tot i així, podem observar que a la variable _win_odds_, tots els outliers són els cavalls que tenen més probabilitats de guanyar. Com que el nostre estudi té a veure amb aquests, no eliminarem aquests outliers del nostre dataset i els tindrem en compte pels anàlisis posteriors.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 out_aw <- unlist(ggplot_build(box_aw)[["data"]][[1]][["outliers"]])
 ind_aw <- which(dataset_clean$actual_weight %in% c(out_aw))
-
 out_f <- unlist(ggplot_build(box_f)[["data"]][[1]][["outliers"]])
 ind_f <- which(dataset_clean$finish_time %in% c(out_f))
-
 out_dw <- unlist(ggplot_build(box_dw)[["data"]][[1]][["outliers"]])
 ind_dw <- which(dataset_clean$declared_horse_weight %in% c(out_dw))
-
 dataset_outliers <- dataset_clean[-c(ind_f,ind_dw,ind_aw),]
 paste("Hem eliminat", (nrow(dataset_clean)-nrow(dataset_outliers)) , "outliers.")
 paste("Ara el nostre dataset té", nrow(dataset_outliers), "observacions.")
@@ -214,27 +211,94 @@ dataset_clean <- dataset_outliers
 ```
 
 ## 3. Anàlisi de les dades.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+
+```
 
 ### 3.1.  Selecció dels grups de dades que es volen analitzar/comparar (planificació dels anàlisis a aplicar).
 
-### 3.2.  Comprovació de la normalitat i homogeneïtat de la variància.
-```{r echo=TRUE, message=FALSE, warning=FALSE, fig.width=10, fig.height=10}
-hist <- list()
-dataset_numerical<- select_if(dataset_clean, is.numeric)
+### 3.2.  1. Comprovació de la normalitat i homogeneïtat de la variància.
 
+Anem a veure la normalitat i homogeneitat de la variança. 
+Per a comporvar la normalitat i la homogeneitat, mirarem com estan distribuides les dades, per a comprovar si compleixen amb la hipotesi de la distribució normal de les dades, i si es comporten de manera homogenia. Ho farem de dues maneres: a) De manera visual amb un QQPlot, que ens permetrà tant veure si les dades s'ajusten a la normalitat com veure si és comporten de manera homogènia. b) Amb dos tests. Per comporvar la normalitat usarem el Test de Shapiro–Wilk, el qual és considerat un dels test més potents per a contrastar la normalitat. Per comporvar la homogeneitat, usarem el test de Bartlett, el qual ens permetrà comparar entre els diversos grups alhora.
+
+Les nostres dades estan mesurades amb diferents llargades de curses, aquest fet, altera els valors d'algunes variables (per exemple, el temps d'una cursa de 1000m serà molt diferent al d'una cursa de 2400m) per tant, per a analitzar la shape de les dades caldrà separar-les per llargada.
+
+#### 1. Finish_time
+
+```{r } 
+dataset_clean$race_distance <- as.factor(dataset_clean$race_distance)
+ggqqplot(data=dataset_clean, x="finish_time", color = "race_distance", ggtheme = theme_minimal(), conf.int = TRUE, size =0.1, title = "QQPlot - Finish Time")
+
+SW <- list()
+llargada = c(1000,1200,1400,1600,1800,2000,2200,2400)
 i = 1
-for (column in dataset_numerical) {
-    dev.new()
-    hist[[i]] <- ggplot(data = dataset_numerical, aes(x=column)) + 
-    facet_grid(rows = vars(dataset_numerical$race_distance), scale = "free_y", space='free_y') +
-    geom_histogram(binwidth=1, fill="#0c4c8a") +
-    theme_minimal() +
-    ggtitle(paste("Histograma -", column))
-    i = i + 1
+for (ll in llargada) {
+  dades <- dataset_clean[dataset_clean$race_distance == ll,9]
+  if (length(dades) < 5000) {SW[[i]] <- shapiro.test(dades)}
+  else{SW[[i]] <- shapiro.test(dades[1:5000])}
+  i = i+1
 }
-grid.arrange(hist[[1]],hist[[2]],hist[[3]],hist[[4]],hist[[5]], ncol=2)
+
+paste("La mitjana del valor W del Test de Shapiro–Wilk:" , mean(c(SW[[1]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]])))
+
+paste("El p-value mitjà del Test de Shapiro–Wilk:", mean(c(SW[[1]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]])))
+
 
 ```
+Podem veure que en el QQPlot, les dades s'ajusten molt bé a la normalitat.
+A més el Test de Shapiro–Wilk també ens indica que les nostres dades són normalitzades, el p-value és molt significant i el valor de Shapiro (W) és quasi 1. 
+
+
+#### 2. Actual Weight
+
+```{r }
+dades <- sample(seq(1,nrow(dataset_clean), by =1), 5000)
+
+ggqqplot(data=dataset_clean, x="actual_weight", ggtheme = theme_minimal(), col = "#0c4c8a", conf.int = TRUE, size = 0.5, title = "QQPlot - Actual Weight")
+shapiro.test(dataset_clean$actual_weight[dades])
+
+```
+En aquets cas, al qqplot veiem que les dades segueixen la linia de la normalitat, tot i que cap al final s'estanquen al voltant de 132 jin (mesura de Xina ~= 65 kg).
+Segons el Test de Shapiro–Wilk, veiem que les dades també estan normalitzades, el p-value és molt significant i el valor de Shapiro (W) és quasi 1. 
+
+#### 3. Declared Horse Weight
+
+```{r }
+dades <- sample(seq(1,nrow(dataset_clean), by =1), 5000)
+
+ggqqplot(data=dataset_clean, x="declared_horse_weight", ggtheme = theme_minimal(), col = "#0c4c8a", conf.int = TRUE, size = 0.5, title = "QQPlot - Declared Horse Weight")
+shapiro.test(dataset_clean$declared_horse_weight[dades])
+
+```
+
+En aquets cas, al qqplot veiem que les dades s'ajusten molt bé a la linia de la normalitat.
+Segons el Test de Shapiro–Wilk, veiem que les dades també estan normalitzades, el p-value és molt significant i el valor de Shapiro (W) és quasi 1. 
+
+
+#### 4. Win Odds
+
+```{r }
+dades <- sample(seq(1,nrow(dataset_clean), by =1), 5000)
+
+ggqqplot(data=dataset_clean, x="win_odds", ggtheme = theme_minimal(), col = "#0c4c8a", conf.int = TRUE, size = 0.5, title = "QQPlot - Win Odds")
+shapiro.test(dataset_clean$win_odds[dades])
+
+```
+En aquest cas, les dades no segueixen una forma normal. Al QQPlot, podem observar que les porbabilitats de guanyar estan repartides de manera "biestable", tant al 0% com al 100%, i molt poques entremig.
+Pel que fa al Test de Shapiro–Wilk, el valor (W) és molt més baix que els anteriors (0.76) no correspon a la normalització. Tenim un p-value molt signficant. 
+
+Homogeneitat:
+
+```{r}
+BT = bartlett.test(finish_time ~ interaction(actual_weight,win_odds,declared_horse_weight), data = dataset_clean) 
+
+print(BT)
+```
+
+
+### 4.3. Aplicació de proves estadístiques per comparar els grups de dades. En funció de les dades i de l’objectiu de l’estudi, aplicar proves de contrast d’hipòtesis, correlacions, regressions, etc. Aplicar almenys tres mètodes d’anàlisi diferents.
 
 
 Rescalesm els dos pesos a variables entre 0 i 1
@@ -259,36 +323,18 @@ mirem la resta de variables (treient la variable que tenim correlacionada amb el
 #eliminar <- c("race_distance")
 #dataset_clean <- dataset_clean[ , !(names(dataset_clean) %in% eliminar)]
 num <- select_if(dataset_clean, is.numeric)
-
 cat <- select_if(dataset_clean, is.character)
 cat[] <- lapply(cat, as.factor)
 for (name in colnames(cat)) {
   cat[name] <- unlist(lapply(cat[name], as.numeric))
 }
-
 dataset_numerical <- data.frame(num,cat)
 cor <- rcorr(as.matrix(dataset_numerical), type = "pearson")
 heatmap(cor$r)
-
 ```
 
 en aquest cas veiem com la variable _win_odds_ (la provabilitat de guanyar abans d'iniciar la cursa) té una correlació força alta amb la posició final de la cursa, cosa que es pot entendre per ser un bon cavall.
 
 En aquest cas, la posició final de la cursa dependrà molt de la resta de cavalls que hi hagui i no del propi cavall, per tant, també es podria eliminar ja que no afecta a la predicció del resultat, sinó al resultat de cada cursa.
-
-
-Anem a veure la normalitat i homogeneitat de la variança
-mirem primer com estan distribuides les dades. i comprovem si compleixen amb la hipotesi de la distribució normal de les dades.
-```{r} 
-hist(dataset_clean$finish_time)
-shapiro.test(dataset_clean$finish_time[1:5000]) #només precesa entre 3 i 5000 valors. mirar si falten valors fent aleatori la seleccio dels 5000
-```
-
-
-
-```{r} 
-hist(dataset_clean$declared_horse_weight)
-shapiro.test(dataset_clean$declared_horse_weight[1:5000]) #només precesa entre 3 i 5000 valors.
-```
 
 
