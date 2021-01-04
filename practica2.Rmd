@@ -18,6 +18,8 @@ library(ggpubr)
 library(raster)
 library(forecast)
 library(psych)
+library(plotly)
+library(crosstalk)
 library(car)
 ```
 
