@@ -384,6 +384,8 @@ summary(res.aov)
 
 ```
 
+El resultat de la ANOVA té un pvalue significant (<0.05) per totes les variables, és a dir, tal i com hem vist amb el pearson amb les variables numèriques, les categòriques també són independents.
+
 en aquest cas veiem com la variable _win_odds_ (la provabilitat de guanyar abans d'iniciar la cursa) té una correlació força alta amb la posició final de la cursa, cosa que es pot entendre per ser un bon cavall.
 
 En aquest cas, la posició final de la cursa dependrà molt de la resta de cavalls que hi hagui i no del propi cavall, per tant, també es podria eliminar ja que no afecta a la predicció del resultat, sinó al resultat de cada cursa.
