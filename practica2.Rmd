@@ -5,7 +5,7 @@ date: "30/12/2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE} 
+```{r setup, include=FALSE,message= FALSE, warning=FALSE} 
 knitr::opts_chunk$set(echo = TRUE)
 library(lubridate)
 library(ggplot2)
@@ -15,6 +15,9 @@ library(scales)
 library(Hmisc)
 library(gridExtra)
 library(ggpubr)
+library(raster)
+library(psych)
+library(car)
 ```
 
 ## 1. Integració i selecció de les dades d’interès a analitzar:
@@ -22,16 +25,15 @@ library(ggpubr)
 Obtenim les dades del repositori: https://www.kaggle.com/lantanacamara/hong-kong-horse-racing
 Aquest conté dades dels resultats de les 1561 curses de cavalls fetes a Hong Kong entre el 14 de Setembre del 2014 i el 16 de Juliol de 2017. Aquest està organitzat amb dos fitxers: race-result-horse.csv i race-result-race.csv:
 
-```{r}
+```{r message= FALSE, warning=FALSE}
 horse.data <- read.csv("./race-result-horse.csv")
 race.data <- read.csv("./race-result-race.csv")
 ```
 
 Unifiquem els dos datasets en un a partir de la variable comú als dos fitxers. Aquesta fa referencia al identificador de la carrera: __race_id__
 
-```{r}
+```{r message= FALSE, warning=FALSE}
 dataset <- merge(horse.data, race.data, by = "race_id")
-attach(dataset) # Per poder fer referencia directament a les variables
 dim(dataset)
 ```
 
@@ -43,7 +45,7 @@ Abans de netejar les dades, hem de mirar què hi tenim a cada columna. Per fer-h
 ```{r message= FALSE, warning=FALSE}
 #head(dataset,5)
 str(dataset)
-colnames(dataset)
+paste("Nombre de variables:" ,length(colnames(dataset)))
 ```
 
 Com podem veure, tenim 30 variables amb 30189 observacions. Com que hi ha moltes variables que estan repetides o que no aporten una informació vàlida, n'eliminarem algunes:
@@ -62,6 +64,7 @@ Com podem veure, tenim 30 variables amb 30189 observacions. Com que hi ha moltes
 eliminar <- c("running_position_1","running_position_2","running_position_3","running_position_4","running_position_5","running_position_6","incident_report","src","race_date","race_number","horse_number","horse_id","sectional_time","length_behind_winner")
 dataset_clean <- dataset[ , !(names(dataset) %in% eliminar)]
 dataset_clean[] <- lapply(dataset_clean, as.character)
+attach(dataset_clean) # Per poder fer referencia directament a les variables
 ```
 
 
@@ -93,7 +96,6 @@ Podem observar que tenim alguns valors buits al nostre dataset. Primer ens centr
 
 ```{r message= FALSE, warning=FALSE}
 paste("Proporció de valors nulls de la variable finishing_position:", format((sum(is.na(dataset_clean$finishing_position))/nrow(dataset_clean))*100, format = "f", digits = 3), "%")
-
 ```
 
 Veiem que representa un valor molt baix de totes les nostres dades, així que aquest cas el podem gestionar eliminant les observacions nules. Si representés una proporció més gran de les nostres dades, al voltant de 15-20% hauriem d'imputar els missing values, utilitzant un anàlisi de regressió. 
@@ -120,45 +122,37 @@ De totes les variables del nostre dataset, només les variables continues poden 
 Primer transformem les variables continues a numèriques per poder trobar-ne els outliers.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-dataset_clean$actual_weight <- unlist(lapply(dataset_clean$actual_weight, as.integer))
-dataset_clean$declared_horse_weight <- unlist(lapply(dataset_clean$declared_horse_weight, as.integer))
+dataset_clean$actual_weight <- unlist(lapply(dataset_clean$actual_weight, as.numeric))
+dataset_clean$declared_horse_weight <- unlist(lapply(dataset_clean$declared_horse_weight, as.numeric))
 dataset_clean$finish_time <-  period_to_seconds(ms(dataset_clean$finish_time))
 dataset_clean$win_odds <- unlist(lapply(dataset_clean$win_odds, as.numeric))
-dataset_clean$race_distance <- unlist(lapply(dataset_clean$race_distance, as.integer))
+dataset_clean$race_distance <- as.factor(dataset_clean$race_distance)
 ```
 
 
 > **Visualitzem els outliers:**
-En el nostre dataset, hi tenim diverses curses de cavalls, aquestes tenen diferents distàncies de 1000m a 2400m. Hem de determinar els outliers tenint en compte la distància de la cursa, sinó aquest factor crearà un bias en els costres resultats.
-
+En el nostre dataset, hi tenim diverses curses de cavalls, aquestes tenen diferents distàncies de 1000m a 2400m. Segons amb quines variables hem de determinar els outliers tenint en compte la distància de la cursa, sinó aquest factor crearà un bias en els costres resultats.
 Utilitzem una representació gràfica (histograma i boxplot), per a visualitzar i detectar els outliers:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, fig.width=10, fig.height=15}
-
 hist_f <- ggplot(data = dataset_clean, aes(x=dataset_clean$finish_time)) + 
   facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y") +
   geom_histogram(binwidth=1, fill="#0c4c8a") +
   theme_minimal() +
   ggtitle("Histograma - Finnish time")
-
 hist_aw <- ggplot(data = dataset_clean, aes(x=dataset_clean$actual_weight)) + 
-  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y") +
   geom_histogram(binwidth=1, fill="#0c4c8a") +
   theme_minimal() +
   ggtitle("Histograma - Actual Weight")
-
 hist_dw <- ggplot(data = dataset_clean, aes(x=dataset_clean$declared_horse_weight)) + 
-  facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y") +
   geom_histogram(binwidth=1, fill="#0c4c8a") +
   theme_minimal() +
   ggtitle("Histograma - Declared Weight")
-
 hist_wo <- ggplot(data = dataset_clean, aes(x=dataset_clean$win_odds)) + 
   facet_grid(rows = vars(dataset_clean$race_distance), scale = "free_y") +
   geom_histogram(binwidth=1, fill="#0c4c8a") +
   theme_minimal() +
   ggtitle("Histograma - Win Odds")
-
 box_f <- ggplot(dataset_clean) +
   aes(x = "", y = dataset_clean$finish_time) +
   facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
@@ -166,23 +160,18 @@ box_f <- ggplot(dataset_clean) +
   ggtitle("Boxplot - Finnish time") +
   ylab("") + xlab("race distance") + 
   theme_minimal()
-
 box_aw <- ggplot(dataset_clean) +
   aes(x = "", y = dataset_clean$actual_weight) +
-  facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
   geom_boxplot(fill = "#0c4c8a",outlier.colour = "red") +
   ggtitle("Boxplot - Actual Weight") +
   ylab("") + xlab("race distance") +
   theme_minimal()
-
 box_dw <- ggplot(dataset_clean) +
   aes(x = "", y = dataset_clean$declared_horse_weight) +
-  facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
   geom_boxplot(fill = "#0c4c8a",outlier.colour = "red") +
   ggtitle("Boxplot - Declared weight") +
   ylab("") + xlab("race distance") +
   theme_minimal()
-
 box_wo <- ggplot(dataset_clean) +
   aes(x = "", y = dataset_clean$win_odds) +
   facet_grid(cols = vars(dataset_clean$race_distance), scale = "free") +
@@ -190,7 +179,6 @@ box_wo <- ggplot(dataset_clean) +
   ggtitle("Boxplot - Win Odds") +
   ylab("") + xlab("race distance") +
   theme_minimal()
-
 hist_f + hist_aw + hist_dw + hist_wo + box_f + box_aw + box_dw + box_wo + plot_layout(nrow = 4, ncol = 2)
 ```
 
@@ -211,10 +199,6 @@ dataset_clean <- dataset_outliers
 ```
 
 ## 3. Anàlisi de les dades.
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-
-
-```
 
 ### 3.1.  Selecció dels grups de dades que es volen analitzar/comparar (planificació dels anàlisis a aplicar).
 
@@ -222,30 +206,30 @@ dataset_clean <- dataset_outliers
 
 Anem a veure la normalitat i homogeneitat de la variança.
 
-Per a comporvar la normalitat i la homogeneitat, mirarem com estan distribuides les dades, per a comprovar si compleixen amb la hipotesi de la distribució normal de les dades, i si es comporten de manera homogenia. Ho farem de dues maneres: a) De manera visual amb un QQPlot, que ens permetrà tant veure si les dades s'ajusten a la normalitat com veure si és comporten de manera homogènia. b) Amb dos tests. Per comporvar la normalitat usarem el Test de Shapiro–Wilk, el qual és considerat un dels test més potents per a contrastar la normalitat. Per comporvar la homogeneitat, usarem el test de Bartlett, el qual ens permetrà comparar entre els diversos grups alhora.
+Per a comporvar la normalitat i la homogeneitat, mirarem com estan distribuides les dades, per a comprovar si compleixen amb la hipotesi de la distribució normal de les dades, i si es comporten de manera homogenia. Ho farem de dues maneres: a) De manera visual. Amb un QQPlot, que ens permetrà veure si les dades s'ajusten a la normalitat, i amb un scatter plot que ens ajudarà a veure si és comporten de manera homogènia. b) Utiltzant tests específics Per comporvar la normalitat usarem el Test de Shapiro–Wilk, el qual és considerat un dels test més potents per a contrastar la normalitat. Per comporvar la homogeneitat, usarem el test de Bartlett, el qual ens permetrà comparar entre els diversos grups alhora.
 
 Les nostres dades estan mesurades amb diferents llargades de curses, aquest fet, altera els valors d'algunes variables (per exemple, el temps d'una cursa de 1000m serà molt diferent al d'una cursa de 2400m) per tant, per a analitzar la shape de les dades caldrà separar-les per llargada. Es a dir, que farem l'estudi per separat de cada tipus de cursa per poder diferenciar bé el comportament.
 
 #### 1. Finish_time
 
 ```{r } 
-dataset_clean$race_distance <- as.factor(dataset_clean$race_distance)
-ggqqplot(data=dataset_clean, x="finish_time", color = "race_distance", ggtheme = theme_minimal(), conf.int = TRUE, size =0.1, title = "QQPlot - Finish Time")
 
+ggqqplot(data=dataset_clean, x="finish_time", color = "race_distance", ggtheme = theme_minimal(), conf.int = TRUE, size =0.1, title = "QQPlot - Finish Time")
 SW <- list()
 llargada = c(1000,1200,1400,1600,1800,2000,2200,2400)
 i = 1
 for (ll in llargada) {
   dades <- dataset_clean[dataset_clean$race_distance == ll,9]
-  if (length(dades) < 5000) {SW[[i]] <- shapiro.test(dades)}
-  else{SW[[i]] <- shapiro.test(dades[1:5000])}
+  if (length(dades) < 5000) {
+    SW[[i]] <- shapiro.test(dades)
+    }
+  else{
+    SW[[i]] <- shapiro.test(dades[1:5000])
+    }
   i = i+1
 }
-
 paste("La mitjana del valor W del Test de Shapiro–Wilk:" , mean(c(SW[[1]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]])))
-
 paste("El p-value mitjà del Test de Shapiro–Wilk:", mean(c(SW[[1]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]])))
-
 
 ```
 
@@ -257,10 +241,8 @@ A més el Test de Shapiro–Wilk també ens indica que les nostres dades són no
 
 ```{r }
 dades <- sample(seq(1,nrow(dataset_clean), by =1), 5000)
-
 ggqqplot(data=dataset_clean, x="actual_weight", ggtheme = theme_minimal(), col = "#0c4c8a", conf.int = TRUE, size = 0.5, title = "QQPlot - Actual Weight")
 shapiro.test(dataset_clean$actual_weight[dades])
-
 ```
 
 En aquets cas, al qqplot veiem que les dades segueixen la linia de la normalitat, tot i que cap al final s'estanquen al voltant de 132 jin (mesura de Xina ~= 65 kg).
@@ -270,10 +252,8 @@ Segons el Test de Shapiro–Wilk, veiem que les dades també estan normalitzades
 
 ```{r }
 dades <- sample(seq(1,nrow(dataset_clean), by =1), 5000)
-
 ggqqplot(data=dataset_clean, x="declared_horse_weight", ggtheme = theme_minimal(), col = "#0c4c8a", conf.int = TRUE, size = 0.5, title = "QQPlot - Declared Horse Weight")
 shapiro.test(dataset_clean$declared_horse_weight[dades])
-
 ```
 
 En aquets cas, al qqplot veiem que les dades s'ajusten molt bé a la linia de la normalitat.
@@ -284,7 +264,6 @@ Segons el Test de Shapiro–Wilk, veiem que les dades també estan normalitzades
 
 ```{r }
 dades <- sample(seq(1,nrow(dataset_clean), by =1), 5000)
-
 ggqqplot(data=dataset_clean, x="win_odds", ggtheme = theme_minimal(), col = "#0c4c8a", conf.int = TRUE, size = 0.5, title = "QQPlot - Win Odds")
 shapiro.test(dataset_clean$win_odds[dades])
 ```
@@ -298,10 +277,27 @@ Pel que fa al Test de Shapiro–Wilk, el valor (W) és molt més baix que els an
 
 Homogeneitat:
 
+```{r label="Homogeneitat"}
+#BT = bartlett.test(dataset_clean$finish_time ~ interaction(dataset_clean$actual_weight, dataset_clean$win_odds,dataset_clean$declared_horse_weight), data = dataset_clean )
+#plot(finish_time ~ actual_weight, data = dataset_clean)
+BT = bartlett.test(finish_time ~ actual_weight, data = dataset_clean )
+print(BT)
+dataset_numerical <- select_if(dataset_clean, is.numeric)
+
+dataset_1200 <- dataset_numerical[dataset_clean$race_distance == "1200",]
+
+pairs(dataset_1200, pch = 19,  cex = 0.5,lower.panel=NULL)
+
+pairs(dataset_1200, 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+             )
+```
 
 ```{r label="Homogeneitat"}
 #BT = bartlett.test(dataset_clean$finish_time ~ interaction(dataset_clean$actual_weight, dataset_clean$win_odds,dataset_clean$declared_horse_weight), data = dataset_clean )
-
 plot(finish_time ~ actual_weight, data = dataset_clean)
 BT = bartlett.test(finish_time ~ actual_weight, data = dataset_clean )
 print(BT)
@@ -327,23 +323,21 @@ print(BT)
 #BT = bartlett.test(list(dataset_clean$actual_weight,dataset_clean$declared_horse_weight))
 #print(BT)
 
-```
-
 
 ### 4.3. Aplicació de proves estadístiques per comparar els grups de dades. En funció de les dades i de l’objectiu de l’estudi, aplicar proves de contrast d’hipòtesis, correlacions, regressions, etc. Aplicar almenys tres mètodes d’anàlisi diferents.
 
+> Correlació:
 
-Rescalem els dos pesos a variables entre 0 i 1
+Per a veure les correlacions entre les variables numèriques utilitzarem la correlació de Pearson:
+
+Primer, rescalem els dos pesos (actual_weight) i (declared_horse_weight) a variables entre 0 i 1, per a poder-les comparar. 
 
 ```{r label="1"}
 dataset_clean$actual_weight<-rescale(dataset_clean$actual_weight)
 dataset_clean$declared_horse_weight<-rescale(dataset_clean$declared_horse_weight)
-dataset_clean$finish_time<-rescale(dataset_clean$finish_time)
-dataset_clean$win_odds<-rescale(dataset_clean$win_odds)
 ```
 
-
-mirem la correlación entre els valors que són numerics, treiem en aquest cas la variable que es vol predir, que es el temps en que ha d'acabar un cavall, i fem la predicció per cada una de les diferents carreres, ja que no es comporten igual i com podem veure hi ha una correlació directe entre el temps de la cursa i la distancia.
+Mirem la correlación entre els valors que són numerics, treiem en aquest cas la variable que es vol predir, que es el temps en que ha d'acabar un cavall, i fem la predicció separant per cada una de les diferents carreres. Com ja hem comentat anteriorment, aquestes no es comporten igual i com podem veure hi ha una correlació directe entre el temps de la cursa i la distancia:
 
 ```{r label="corelacio"}
 cor(x=dataset_clean$finish_time, y=as.numeric(dataset_clean$race_distance))
@@ -363,10 +357,15 @@ for (name in colnames(cat)) {
 dataset_numerical <- data.frame(num,cat)
 cor <- rcorr(as.matrix(dataset_numerical), type = "pearson")
 heatmap(cor$r)
+
+
+
 ```
 
 en aquest cas veiem com la variable _win_odds_ (la provabilitat de guanyar abans d'iniciar la cursa) té una correlació força alta amb la posició final de la cursa, cosa que es pot entendre per ser un bon cavall.
 
 En aquest cas, la posició final de la cursa dependrà molt de la resta de cavalls que hi hagui i no del propi cavall, per tant, també es podria eliminar ja que no afecta a la predicció del resultat, sinó al resultat de cada cursa.
+
+> Regressió:
 
 
