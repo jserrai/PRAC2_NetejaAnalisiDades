@@ -16,6 +16,7 @@ library(Hmisc)
 library(gridExtra)
 library(ggpubr)
 library(raster)
+library(forecast)
 library(psych)
 library(car)
 ```
@@ -368,7 +369,7 @@ pairs.panels(dataset_numerical,
 ```
 
 Podem veure que no tenim correlacions entre les variables numèriques o són gairebé nules. A més a més, els p-values tots són significants (<0.05). No tenir correlacions ens indica que les variables entre elles són independents. És a dir, que podem analitzar-les sense trobar-nos biaixos de collinearitat.
-En el pairplot, veiem que quasi hi ha homogeneitat entre les variables, tot i així __win_odds__ presenta petites homogeneitats amb les variables: amb __finishing_position__  hi veiem una petita homogeneitat positiva i amb __actual_weight__ hi veiem una petita homogeneitat negativa.
+En el pairplot, veiem que quasi hi ha homogeneitat entre les variables, tot i així __win_odds__ presenta petites homogeneitats amb les variables: amb __finishing_position__  hi veiem una homogeneitat positiva i amb __actual_weight__ hi veiem una petita homogeneitat negativa.
 
 >ANOVA
 
@@ -387,11 +388,53 @@ summary(res.aov)
 
 El resultat de la ANOVA té un pvalue significant (<0.05) per totes les variables, excepte __track_condition__. És a dir, tal i com hem vist amb el pearson amb les variables numèriques, les categòriques també són independents. Pel que fa al __track_condition__, no hi ha una diferència significant sobre la variable __final_position__ en relació al __track_condition__ (Fvalue = 1.5).
 
+> Regressió:
+
+> PCA + Regressió:
+
+Primer transformem els valors categòrics a numèrics per a poder fer el PCA:
+```{r}
+dataset_num <- dataset_clean
+dataset_num[] <- lapply(dataset_num, as.factor)
+dataset_num[] <- lapply(dataset_num, as.numeric)
+dataset_num <- dataset_num[ , !(names(dataset_num) %in% c("finish_time"))]
+```
+
+Ara creem el PCA i visualitzem el resultats:
+```{r}
+pca <- prcomp(dataset_num, scale = TRUE)
+summary(pca)
+plot(summary(pca)$importance[3,])
+
+```
+
+Separem les dades entre train i test:
+
+```{r}
+set.seed(999)
+smp_size <- floor(0.75 * nrow(dataset_num))
+
+train_ind <- sample(seq_len(nrow(dataset_num)), size = smp_size)
+
+train <- dataset_num[train_ind, ]
+test <- dataset_num[-train_ind, ]
+test_y <- test[ , (names(test) %in% c("finishing_position"))]
+test <- test[ , !(names(test) %in% c("finishing_position"))]
+```
+
+Finalment fem el PCR (principal component regression) i calculem l'accuracy del model:
+```{r}
+pcr_model <- pcr(finishing_position~., data = train,scale =TRUE, validation = "CV")
+pcr_pred <- predict(pcr_model, test, ncomp = 7)
+accuracy(test_y, pcr_pred)
+```
+
+
 
 en aquest cas veiem com la variable _win_odds_ (la provabilitat de guanyar abans d'iniciar la cursa) té una correlació força alta amb la posició final de la cursa, cosa que es pot entendre per ser un bon cavall.
 
 En aquest cas, la posició final de la cursa dependrà molt de la resta de cavalls que hi hagui i no del propi cavall, per tant, també es podria eliminar ja que no afecta a la predicció del resultat, sinó al resultat de cada cursa.
 
-> Regressió:
+
  treiem en aquest cas la variable que es vol predir, que es el temps en que ha d'acabar un cavall, i fem la predicció separant per cada una de les diferents carreres
 
