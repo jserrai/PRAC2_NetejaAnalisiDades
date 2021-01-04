@@ -385,7 +385,8 @@ summary(res.aov)
 
 ```
 
-El resultat de la ANOVA té un pvalue significant (<0.05) per totes les variables, és a dir, tal i com hem vist amb el pearson amb les variables numèriques, les categòriques també són independents.
+El resultat de la ANOVA té un pvalue significant (<0.05) per totes les variables, excepte __track_condition__. És a dir, tal i com hem vist amb el pearson amb les variables numèriques, les categòriques també són independents. Pel que fa al __track_condition__, no hi ha una diferència significant sobre la variable __final_position__ en relació al __track_condition__ (Fvalue = 1.5).
+
 
 en aquest cas veiem com la variable _win_odds_ (la provabilitat de guanyar abans d'iniciar la cursa) té una correlació força alta amb la posició final de la cursa, cosa que es pot entendre per ser un bon cavall.
 
