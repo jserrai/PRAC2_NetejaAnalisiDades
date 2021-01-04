@@ -220,10 +220,11 @@ dataset_clean <- dataset_outliers
 
 ### 3.2.  1. Comprovació de la normalitat i homogeneïtat de la variància.
 
-Anem a veure la normalitat i homogeneitat de la variança. 
+Anem a veure la normalitat i homogeneitat de la variança.
+
 Per a comporvar la normalitat i la homogeneitat, mirarem com estan distribuides les dades, per a comprovar si compleixen amb la hipotesi de la distribució normal de les dades, i si es comporten de manera homogenia. Ho farem de dues maneres: a) De manera visual amb un QQPlot, que ens permetrà tant veure si les dades s'ajusten a la normalitat com veure si és comporten de manera homogènia. b) Amb dos tests. Per comporvar la normalitat usarem el Test de Shapiro–Wilk, el qual és considerat un dels test més potents per a contrastar la normalitat. Per comporvar la homogeneitat, usarem el test de Bartlett, el qual ens permetrà comparar entre els diversos grups alhora.
 
-Les nostres dades estan mesurades amb diferents llargades de curses, aquest fet, altera els valors d'algunes variables (per exemple, el temps d'una cursa de 1000m serà molt diferent al d'una cursa de 2400m) per tant, per a analitzar la shape de les dades caldrà separar-les per llargada.
+Les nostres dades estan mesurades amb diferents llargades de curses, aquest fet, altera els valors d'algunes variables (per exemple, el temps d'una cursa de 1000m serà molt diferent al d'una cursa de 2400m) per tant, per a analitzar la shape de les dades caldrà separar-les per llargada. Es a dir, que farem l'estudi per separat de cada tipus de cursa per poder diferenciar bé el comportament.
 
 #### 1. Finish_time
 
@@ -247,6 +248,7 @@ paste("El p-value mitjà del Test de Shapiro–Wilk:", mean(c(SW[[1]]$p.value[[1
 
 
 ```
+
 Podem veure que en el QQPlot, les dades s'ajusten molt bé a la normalitat.
 A més el Test de Shapiro–Wilk també ens indica que les nostres dades són normalitzades, el p-value és molt significant i el valor de Shapiro (W) és quasi 1. 
 
@@ -260,6 +262,7 @@ ggqqplot(data=dataset_clean, x="actual_weight", ggtheme = theme_minimal(), col =
 shapiro.test(dataset_clean$actual_weight[dades])
 
 ```
+
 En aquets cas, al qqplot veiem que les dades segueixen la linia de la normalitat, tot i que cap al final s'estanquen al voltant de 132 jin (mesura de Xina ~= 65 kg).
 Segons el Test de Shapiro–Wilk, veiem que les dades també estan normalitzades, el p-value és molt significant i el valor de Shapiro (W) és quasi 1. 
 
@@ -284,24 +287,53 @@ dades <- sample(seq(1,nrow(dataset_clean), by =1), 5000)
 
 ggqqplot(data=dataset_clean, x="win_odds", ggtheme = theme_minimal(), col = "#0c4c8a", conf.int = TRUE, size = 0.5, title = "QQPlot - Win Odds")
 shapiro.test(dataset_clean$win_odds[dades])
-
 ```
+
 En aquest cas, les dades no segueixen una forma normal. Al QQPlot, podem observar que les porbabilitats de guanyar estan repartides de manera "biestable", tant al 0% com al 100%, i molt poques entremig.
 Pel que fa al Test de Shapiro–Wilk, el valor (W) és molt més baix que els anteriors (0.76) no correspon a la normalització. Tenim un p-value molt signficant. 
 
+
+
+
+
 Homogeneitat:
 
-```{r}
-BT = bartlett.test(finish_time ~ interaction(actual_weight,win_odds,declared_horse_weight), data = dataset_clean) 
 
+```{r label="Homogeneitat"}
+#BT = bartlett.test(dataset_clean$finish_time ~ interaction(dataset_clean$actual_weight, dataset_clean$win_odds,dataset_clean$declared_horse_weight), data = dataset_clean )
+
+plot(finish_time ~ actual_weight, data = dataset_clean)
+BT = bartlett.test(finish_time ~ actual_weight, data = dataset_clean )
 print(BT)
+```
+
+
+
+
+#No funciona aquest apartat, tot i que l'anterior si, mirar el número d'observacions per cada una.
+```{r} 
+plot(finish_time ~ declared_horse_weight, data = dataset_clean)
+#BT = bartlett.test(finish_time ~  declared_horse_weight, data = dataset_clean )
+print(BT)
+```
+
+
+
+## així funciona, amb la llista,  però no sé si es el que es vol aconseguir
+#BT = bartlett.test(list(dataset_clean$finish_time,dataset_clean$declared_horse_weight))
+#print(BT)
+#BT = bartlett.test(list(dataset_clean$finish_time,dataset_clean$actual_weight,dataset_clean$declared_horse_weight))
+#print(BT)
+#BT = bartlett.test(list(dataset_clean$actual_weight,dataset_clean$declared_horse_weight))
+#print(BT)
+
 ```
 
 
 ### 4.3. Aplicació de proves estadístiques per comparar els grups de dades. En funció de les dades i de l’objectiu de l’estudi, aplicar proves de contrast d’hipòtesis, correlacions, regressions, etc. Aplicar almenys tres mètodes d’anàlisi diferents.
 
 
-Rescalesm els dos pesos a variables entre 0 i 1
+Rescalem els dos pesos a variables entre 0 i 1
 
 ```{r label="1"}
 dataset_clean$actual_weight<-rescale(dataset_clean$actual_weight)
@@ -314,7 +346,7 @@ dataset_clean$win_odds<-rescale(dataset_clean$win_odds)
 mirem la correlación entre els valors que són numerics, treiem en aquest cas la variable que es vol predir, que es el temps en que ha d'acabar un cavall, i fem la predicció per cada una de les diferents carreres, ja que no es comporten igual i com podem veure hi ha una correlació directe entre el temps de la cursa i la distancia.
 
 ```{r label="corelacio"}
-cor(x=dataset_clean$finish_time, y=dataset_clean$race_distance)
+cor(x=dataset_clean$finish_time, y=as.numeric(dataset_clean$race_distance))
 ```
 
 
