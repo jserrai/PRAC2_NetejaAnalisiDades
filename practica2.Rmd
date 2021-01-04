@@ -349,12 +349,8 @@ mirem la resta de variables (treient la variable que tenim correlacionada amb el
 #eliminar <- c("race_distance")
 #dataset_clean <- dataset_clean[ , !(names(dataset_clean) %in% eliminar)]
 num <- select_if(dataset_clean, is.numeric)
-cat <- select_if(dataset_clean, is.character)
-cat[] <- lapply(cat, as.factor)
-for (name in colnames(cat)) {
-  cat[name] <- unlist(lapply(cat[name], as.numeric))
-}
-dataset_numerical <- data.frame(num,cat)
+
+dataset_numerical <- data.frame(num)
 cor <- rcorr(as.matrix(dataset_numerical), type = "pearson")
 heatmap(cor$r)
 
