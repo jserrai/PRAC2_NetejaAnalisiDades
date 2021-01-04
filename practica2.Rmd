@@ -286,14 +286,14 @@ dataset_numerical <- select_if(dataset_clean, is.numeric)
 
 dataset_1200 <- dataset_numerical[dataset_clean$race_distance == "1200",]
 
-pairs(dataset_1200, pch = 19,  cex = 0.5,lower.panel=NULL)
+#pairs(dataset_1200, pch = 19,  cex = 0.5,lower.panel=NULL)
 
-pairs(dataset_1200, 
+'pairs.panels(dataset_1200, 
              method = "pearson", # correlation method
              hist.col = "#00AFBB",
              density = TRUE,  # show density plots
              ellipses = TRUE # show correlation ellipses
-             )
+             )'
 ```
 
 ```{r label="Homogeneitat"}
@@ -326,35 +326,61 @@ print(BT)
 
 ### 4.3. Aplicació de proves estadístiques per comparar els grups de dades. En funció de les dades i de l’objectiu de l’estudi, aplicar proves de contrast d’hipòtesis, correlacions, regressions, etc. Aplicar almenys tres mètodes d’anàlisi diferents.
 
-> Correlació:
+#### 1. Correlació:
+
+>Pearson
 
 Per a veure les correlacions entre les variables numèriques utilitzarem la correlació de Pearson:
 
 Primer, rescalem els dos pesos (actual_weight) i (declared_horse_weight) a variables entre 0 i 1, per a poder-les comparar. 
 
 ```{r label="1"}
-dataset_clean$actual_weight<-rescale(dataset_clean$actual_weight)
-dataset_clean$declared_horse_weight<-rescale(dataset_clean$declared_horse_weight)
+dataset_clean$actual_weight <- rescale(dataset_clean$actual_weight)
+dataset_clean$declared_horse_weight <- rescale(dataset_clean$declared_horse_weight)
 ```
 
-Mirem la correlación entre els valors que són numerics, treiem en aquest cas la variable que es vol predir, que es el temps en que ha d'acabar un cavall, i fem la predicció separant per cada una de les diferents carreres. Com ja hem comentat anteriorment, aquestes no es comporten igual i com podem veure hi ha una correlació directe entre el temps de la cursa i la distancia:
+Mirem la correlación entre els valors que són numerics. Com ja hem comentat anteriorment, aquestes no es comporten igual i com podem veure hi ha una correlació directe entre el temps de la cursa i la distància. També sabem que el finish_position és una representació del finish_time, sense estar correlacionada amb la distància.
 
-```{r label="corelacio"}
-cor(x=dataset_clean$finish_time, y=as.numeric(dataset_clean$race_distance))
+```{r label="correlacio"}
+paste("Correlació del finish time amb la race distance:" , cor(x=dataset_clean$finish_time, y=as.numeric(dataset_clean$race_distance)))
+paste("Correlació del finish position amb la race distance:" ,cor(x=dataset_clean$finishing_position, y=as.numeric(dataset_clean$race_distance)))
 ```
 
+Acabem de veure que el finish_time depèn de la race_distance, per tant, per a fer les correlacions no usarem aquesta variable. En aquest cas, la variable finish_position és una representació del finish_time, sense estar correlacionada amb el race_distance. Així doncs, usarem aquesta per a estudiar les correlacions entre la resta de variales:
 
-mirem la resta de variables (treient la variable que tenim correlacionada amb el temps)
 ```{r label="rcorr" }
-#eliminar <- c("race_distance")
-#dataset_clean <- dataset_clean[ , !(names(dataset_clean) %in% eliminar)]
-num <- select_if(dataset_clean, is.numeric)
+eliminar <- c("race_distance", "finish_time")
+dataset_numerical <- dataset_clean[ , !(names(dataset_clean) %in% eliminar)]
+dataset_numerical <- select_if(dataset_numerical, is.numeric)
 
-dataset_numerical <- data.frame(num)
 cor <- rcorr(as.matrix(dataset_numerical), type = "pearson")
-heatmap(cor$r)
+cor
+pairs.panels(dataset_numerical, 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE, # show correlation ellipses
+             cor = TRUE,
+             show.points = FALSE
+             )
 
+```
 
+Podem veure que no tenim correlacions entre les variables numèriques o són gairebé nules. A més a més, els p-values tots són significants (<0.05). No tenir correlacions ens indica que les variables entre elles són independents. És a dir, que podem analitzar-les sense trobar-nos biaixos de collinearitat.
+En el pairplot, veiem que quasi hi ha homogeneitat entre les variables, tot i així __win_odds__ presenta petites homogeneitats amb les variables: amb __finishing_position__  hi veiem una petita homogeneitat positiva i amb __actual_weight__ hi veiem una petita homogeneitat negativa.
+
+>ANOVA
+
+Ara ens centrarem amb les correlacions entre variables categòriques, per a fer-ho utilitzarem la funció ANOVA, per a comparar les mitjanes entre més de dos grups de dades
+
+```{r}
+
+dataset_categoric <- dataset_clean[ , !(names(dataset_clean) %in% c(names(dataset_numerical),"finish_time"))]
+dataset_categoric[] <- lapply(dataset_categoric, as.factor)
+dataset_categoric$finishing_position <- dataset_clean$finishing_position
+
+res.aov <- aov(finishing_position ~ horse_name + jockey + trainer + draw + race_course + race_class + race_distance + track_condition + track, data = dataset_categoric) 
+summary(res.aov)
 
 ```
 
@@ -363,5 +389,5 @@ en aquest cas veiem com la variable _win_odds_ (la provabilitat de guanyar abans
 En aquest cas, la posició final de la cursa dependrà molt de la resta de cavalls que hi hagui i no del propi cavall, per tant, també es podria eliminar ja que no afecta a la predicció del resultat, sinó al resultat de cada cursa.
 
 > Regressió:
-
+ treiem en aquest cas la variable que es vol predir, que es el temps en que ha d'acabar un cavall, i fem la predicció separant per cada una de les diferents carreres
 
