@@ -181,6 +181,7 @@ box_wo <- ggplot(dataset_clean) +
   theme_minimal()
 hist_f + hist_aw + hist_dw + hist_wo + box_f + box_aw + box_dw + box_wo + plot_layout(nrow = 4, ncol = 2)
 ```
+Per la variable del temps de finalització de cada carrera (Finish time), podem veure que hi ha cavalls que triguem especialment molt més que la resta en acabar la cursa. Podem veure també, com el pes del genet (Actual weight) està esbiaixat a l’alça, però tot i així hi ha alguns valors baixos, però no estan considerats outliers. El mateix passa amb el pes dels cavalls (Declared weight), que la majoria estan distribuïts centralment, però tot i això hi ha valors que queden marcats com a extrems. Podem veure que la variació de pes és molt petita i sembla que els cavalls més grans son els que fan curses més curtes, però no és significatiu. Pel que fa als win odds, veiem que tot i la mitjana ser bastant baixa, tenim molts valors alts, els quals estan qualificats com a extrems.
 
 > **Ara eliminem els outliers de cada una de les variables:**
 Eliminarem tots aquells valors outliers. Tot i així, podem observar que a la variable _win_odds_, tots els outliers són els cavalls que tenen més probabilitats de guanyar. Com que el nostre estudi té a veure amb aquests, no eliminarem aquests outliers del nostre dataset i els tindrem en compte pels anàlisis posteriors.
