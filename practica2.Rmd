@@ -428,8 +428,26 @@ pcr_model <- pcr(finishing_position~., data = train,scale =TRUE, validation = "C
 pcr_pred <- predict(pcr_model, test, ncomp = 7)
 accuracy(test_y, pcr_pred)
 ```
+### VISUALITZACIÓ
 
+```{r}
+library(crosstalk)
 
+dataset_clean$finishing_position <-  unlist(lapply(dataset_clean$finishing_position, as.factor))
+dataset_clean$race_date <- dataset$race_date
+tx <- highlight_key(dataset_clean[1:5000,])
+widgets <- bscols(
+  widths = c(12,12,12),
+  filter_select("horse_name", "Horse_name", tx, ~horse_name),
+  filter_checkbox("race_distance", "race_distance", tx, ~race_distance, inline = TRUE)
+)
+bscols(
+  widths = c(4,6), widgets, 
+  plot_ly(tx, x = ~race_date, y = ~finish_time, showlegend = TRUE) %>% 
+    add_lines(color = ~finishing_position)
+)
+
+```
 
 en aquest cas veiem com la variable _win_odds_ (la provabilitat de guanyar abans d'iniciar la cursa) té una correlació força alta amb la posició final de la cursa, cosa que es pot entendre per ser un bon cavall.
 
