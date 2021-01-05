@@ -1,7 +1,7 @@
 ---
 title: "practica2"
-author: "Paula Jordi"
-date: "30/12/2020"
+author: "Paula Sobrevals, Jordi Serra"
+date: "05/01/2021"
 output: html_document
 ---
 
@@ -26,16 +26,16 @@ require(pls)
 
 ## 1. Integració i selecció de les dades d’interès a analitzar:
 
-Obtenim les dades del repositori: https://www.kaggle.com/lantanacamara/hong-kong-horse-racing
-Aquest conté dades dels resultats de les 1561 curses de cavalls fetes a Hong Kong entre el 14 de Setembre del 2014 i el 16 de Juliol de 2017. Aquest està organitzat amb dos fitxers: race-result-horse.csv i race-result-race.csv:
+Em escollit el següent repositori per que conté diferents valors i tipologies, a l'hora que disposa de dos fitxers i ens permet crear un únic dataset a partir de fusionar els dos. Obtenim les dades del repositori: https://www.kaggle.com/lantanacamara/hong-kong-horse-racing
+Aquest conté dades dels resultats de les 1561 curses de cavalls fetes a Hong Kong entre el 14 de Setembre del 2014 i el 16 de Juliol de 2017. 
+Està organitzat amb dos fitxers: race-result-horse.csv i race-result-race.csv:
 
 ```{r message= FALSE, warning=FALSE}
 horse.data <- read.csv("./race-result-horse.csv")
 race.data <- read.csv("./race-result-race.csv")
 ```
 
-Unifiquem els dos datasets en un a partir de la variable comú als dos fitxers. Aquesta fa referencia al identificador de la carrera: __race_id__
-
+Unifiquem els dos datasets en un a partir de la variable comú als dos fitxers. Aquesta fa referencia al identificador de la carrera: __race_id__ i mostrem la dimensió de les observacions i les variables.
 ```{r message= FALSE, warning=FALSE}
 dataset <- merge(horse.data, race.data, by = "race_id")
 dim(dataset)
@@ -61,7 +61,7 @@ Com podem veure, tenim 30 variables amb 30189 observacions. Com que hi ha moltes
 5. __race_number__: També és reduntant amb les altres variables.
 6. __race_date__: La data de la carrera és indiferent per l'anàlisi de les dades. 
 7. __sectional_time__: Tindrem en compte només el temps total de la carrera, no de cada volta.
-8. __horse_id__ : Ja tenim un identificador pel cavall, aques és redundant.
+8. __horse_id__ : Ja tenim un identificador pel cavall, el nom, per tant aquest és redundant.
 9. __length_behind_winner__ : És redundant, ja tenim la posició final de la cursa.
 
 ```{r message= FALSE, warning=FALSE}
@@ -74,9 +74,8 @@ attach(dataset_clean) # Per poder fer referencia directament a les variables
 
 ### 2.1. Les dades contenen zeros o elements buits? Com gestionaries aquests casos?
 
-
-Fent una ullada al dataset, veiem que alguns valors NA estan representats com a "---", "N", "SH" o "HD". Canviarem aquests valors a NA per a poder treballar amb la mateixa notació. 
-A més a més, a la columna de __length_behind_winner__ (la distància del cavall en qüestió en relació al primer), ens trobem valors representats com a "-". Aquests corresponen al guanyador de la cursa, el quel no té distància sobre sí mateix, és a dir no són valors buits sinó que representen distància 0. Modificarem la notació per "0".
+Fent una ullada al dataset, veiem que alguns valors _NA_ estan representats com a "---", "N", "SH" o "HD". Canviarem aquests valors a _NA_ per a poder treballar amb la mateixa notació. 
+A més a més, a la columna de __length_behind_winner__ (la distància del cavall en qüestió en relació al primer), ens trobem valors representats com a "-". Aquests corresponen al guanyador de la cursa, no té distància sobre sí mateix, és a dir, no són valors buits sinó que representen distància 0. Modificarem la notació per "0".
 A la variable __finishing_position__, tenim diversos valors no numèrics, aquests estan representats amb diferents lletres. Per a utilitzar la mateixa notació, canviarem la variable a numèrica i aquells valors no numèrics passaran a estar representats amb "NA".
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -111,7 +110,7 @@ colSums(is.na(dataset_clean))
 ```
 
 
-Un op netejada la variable, ja no tenim més valors buits en les altres columnes.
+Un cop netejada la variable, ja no tenim més valors buits en les altres columnes.
 Tot i així, si mirem al dataset original, veiem que hi havia bastants valors buits. Aquests, estaven concentrats en les columnes que hem eliminat perque no ens aportaven informació útil.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -122,7 +121,7 @@ colSums(is.na(dataset[,eliminar]))
 ### 2.2. Identificació i tractament de valors extrems
 
 Per a visualitzar els valors extrems, primer escollirem aquelles variables en les quals podem trobar-nos valors extrems.
-De totes les variables del nostre dataset, només les variables continues poden tenir valors extrems, aquelles que categòriques o identificatives no en tindran ( __race_id__, __horse_name__, __jockey__, __trainer__, __draw__, __race_course__, __race_name__, __race_class__, __track__, __track_condition__, __finishing_position__, __length_behind_winner__,__race_distance__ ).
+De totes les variables del nostre dataset, només les variables continues poden tenir valors extrems, aquelles que categòriques o identificatives no en tindran ( __race_id__, __horse_name__, __jockey__, __trainer__, __draw__, __race_course__, __race_name__, __race_class__, __track__, __track_condition__, __finishing_position__, __length_behind_winner__, __race_distance__ ).
 Primer transformem les variables continues a numèriques per poder trobar-ne els outliers.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -135,8 +134,11 @@ dataset_clean$race_distance <- as.factor(dataset_clean$race_distance)
 
 
 > **Visualitzem els outliers:**
-En el nostre dataset, hi tenim diverses curses de cavalls, aquestes tenen diferents distàncies de 1000m a 2400m. Segons amb quines variables hem de determinar els outliers tenint en compte la distància de la cursa, sinó aquest factor crearà un bias en els costres resultats.
-Utilitzem una representació gràfica (histograma i boxplot), per a visualitzar i detectar els outliers:
+
+En el nostre dataset, hi tenim diverses curses de cavalls, aquestes tenen diferents distàncies de 1000m a 2400m. Segons amb quines variables hem de determinar els outliers tenint en compte la distància de la cursa, sinó aquest factor crearà un bias en els nostres resultats, si els tractem tots a la vegada quedarien amagats valors extrems dins de les longituds d'altres curses.
+
+
+Utilitzem la representació gràfica (histograma i boxplot) per a visualitzar i detectar els outliers:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, fig.width=10, fig.height=15}
 hist_f <- ggplot(data = dataset_clean, aes(x=dataset_clean$finish_time)) + 
@@ -185,9 +187,12 @@ box_wo <- ggplot(dataset_clean) +
   theme_minimal()
 hist_f + hist_aw + hist_dw + hist_wo + box_f + box_aw + box_dw + box_wo + plot_layout(nrow = 4, ncol = 2)
 ```
-Per la variable del temps de finalització de cada carrera (Finish time), podem veure que hi ha cavalls que triguem especialment molt més que la resta en acabar la cursa. Podem veure també, com el pes del genet (Actual weight) està esbiaixat a l’alça, però tot i així hi ha alguns valors baixos, però no estan considerats outliers. El mateix passa amb el pes dels cavalls (Declared weight), que la majoria estan distribuïts centralment, però tot i això hi ha valors que queden marcats com a extrems. Podem veure que la variació de pes és molt petita i sembla que els cavalls més grans son els que fan curses més curtes, però no és significatiu. Pel que fa als win odds, veiem que tot i la mitjana ser bastant baixa, tenim molts valors alts, els quals estan qualificats com a extrems.
+
+
+Per la variable del temps de finalització de cada carrera ( _Finish_time_ ), podem veure que hi ha cavalls que triguem especialment molt més que la resta en acabar la cursa. Podem veure també, com el pes del genet ( _Actual_weight_ ) està esbiaixat a l’alça, però tot i així hi ha alguns valors baixos, però no estan considerats outliers. El mateix passa amb el pes dels cavalls ( _Declared_weight_ ), que la majoria estan distribuïts centralment, però tot i això hi ha valors que queden marcats com a extrems. Podem veure que la variació de pes és molt petita i sembla que els cavalls més grans són els que fan curses més curtes, però no és significatiu. Pel que fa als _win_odds_, veiem que tot i la mitjana ser bastant baixa, tenim molts valors alts, els quals estan qualificats com a extrems.
 
 > **Ara eliminem els outliers de cada una de les variables:**
+
 Eliminarem tots aquells valors outliers. Tot i així, podem observar que a la variable _win_odds_, tots els outliers són els cavalls que tenen més probabilitats de guanyar. Com que el nostre estudi té a veure amb aquests, no eliminarem aquests outliers del nostre dataset i els tindrem en compte pels anàlisis posteriors.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -206,9 +211,12 @@ dataset_clean <- dataset_clean[ , !(names(dataset_clean) %in% c("race_date"))]
 
 ## 3. Anàlisi de les dades.
 
+Anem a fer ara l'anàlisi de les dades en profunditat.
+
 ### 3.1.  Selecció dels grups de dades que es volen analitzar/comparar (planificació dels anàlisis a aplicar).
 
 Visualitzem el datset:
+
 ```{r}
 str(dataset_clean)
 ```
