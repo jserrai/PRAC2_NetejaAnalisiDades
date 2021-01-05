@@ -19,7 +19,7 @@ practica2.pdf - Pràctica RMarkdown passada a pdf.
 
 PRAC2_NetejaiAnalisiDades_JordiSerra_PaulaSobrevals.pdf - PDF amb les respostes als enunciats.
 
-Wiki del repositori - Descripcioó de la PAC, Bibliografia i components del grup.
+Wiki del repositori - Descripció de la PRAC2, Bibliografia i components del grup.
 
 
 ___________________
