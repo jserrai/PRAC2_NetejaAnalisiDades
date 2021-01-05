@@ -21,6 +21,7 @@ library(psych)
 library(plotly)
 library(crosstalk)
 library(car)
+require(pls)
 ```
 
 ## 1. Integració i selecció de les dades d’interès a analitzar:
@@ -206,13 +207,21 @@ dataset_clean <- dataset_outliers
 
 ### 3.1.  Selecció dels grups de dades que es volen analitzar/comparar (planificació dels anàlisis a aplicar).
 
+Visualitzem el datset:
+```{r}
+str(dataset_clean)
+```
+Tenim algunes variables numèriques contínues i d'altres categòriques. Treballarem amb totes les dades que tenim al dataset_clean, un cop hem eliminat els outliers i les variables repetides o que no eren útils. Separararem el dataset, i treballarem per separat amb les dades numèriques continues i les dades categòriques, ja que per a treballar-les molts cops calen diferents funcions. Finalment per a dur a terme els anàlisis, juntarem el dataset i trasformarem aquelles variables char en numèriques, així podrem analitzar-lo tot sencer.
+A més a més, les nostres dades estan mesurades amb diferents llargades de curses, aquest fet, altera els valors d'algunes variables (per exemple, el temps d'una cursa de 1000m serà molt diferent al d'una cursa de 2400m) per tant, per a analitzar la forma de les dades caldrà separar-les per llargada. Es a dir, si l'analisi ho requereix, farem l'estudi per separat de cada tipus de cursa per poder diferenciar bé el comportament.
+
 ### 3.2.  1. Comprovació de la normalitat i homogeneïtat de la variància.
 
 Anem a veure la normalitat i homogeneitat de la variança.
 
-Per a comporvar la normalitat i la homogeneitat, mirarem com estan distribuides les dades, per a comprovar si compleixen amb la hipotesi de la distribució normal de les dades, i si es comporten de manera homogenia. Ho farem de dues maneres: a) De manera visual. Amb un QQPlot, que ens permetrà veure si les dades s'ajusten a la normalitat, i amb un scatter plot que ens ajudarà a veure si és comporten de manera homogènia. b) Utiltzant tests específics Per comporvar la normalitat usarem el Test de Shapiro–Wilk, el qual és considerat un dels test més potents per a contrastar la normalitat. Per comporvar la homogeneitat, usarem el test de Bartlett, el qual ens permetrà comparar entre els diversos grups alhora.
+Per a comporvar la normalitat i la homogeneitat, mirarem com estan distribuides les dades, per a comprovar si compleixen amb la hipotesi de la distribució normal de les dades, i si es comporten de manera homogenia. Ho farem de dues maneres: 
+a) De manera visual: Amb un QQPlot, que ens permetrà veure si les dades s'ajusten a la normalitat, i amb un scatter plot que ens ajudarà a veure si és comporten de manera homogènia. 
+b) Utiltzant tests específics: Per comporvar la normalitat usarem el Test de Shapiro–Wilk, el qual és considerat un dels test més potents per a contrastar la normalitat. Per comporvar la homogeneitat, usarem el Lavene Test i el Fligner-Killeen test segons si les nostres dades segueixen una distribució normal o no.
 
-Les nostres dades estan mesurades amb diferents llargades de curses, aquest fet, altera els valors d'algunes variables (per exemple, el temps d'una cursa de 1000m serà molt diferent al d'una cursa de 2400m) per tant, per a analitzar la shape de les dades caldrà separar-les per llargada. Es a dir, que farem l'estudi per separat de cada tipus de cursa per poder diferenciar bé el comportament.
 
 #### 1. Finish_time
 
@@ -235,11 +244,13 @@ for (ll in llargada) {
 paste("La mitjana del valor W del Test de Shapiro–Wilk:" , mean(c(SW[[1]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]],SW[[2]]$statistic[[1]])))
 paste("El p-value mitjà del Test de Shapiro–Wilk:", mean(c(SW[[1]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]],SW[[2]]$p.value[[1]])))
 
+leveneTest(finish_time ~ as.factor(race_distance), data=dataset_clean)
+
 ```
 
 Podem veure que en el QQPlot, les dades s'ajusten molt bé a la normalitat.
 A més el Test de Shapiro–Wilk també ens indica que les nostres dades són normalitzades, el p-value és molt significant i el valor de Shapiro (W) és quasi 1. 
-
+Segons el Test de Levene, veiem que tenim un pvalue inferior al nivell de significació (<0,05) per tant rebutjarem la hipòtesi nul·la d’homoscedasticitat i concluïm que la variable presenta variàncies estadísticament diferents per als diferents grups.
 
 #### 2. Actual Weight
 
@@ -247,10 +258,13 @@ A més el Test de Shapiro–Wilk també ens indica que les nostres dades són no
 dades <- sample(seq(1,nrow(dataset_clean), by =1), 5000)
 ggqqplot(data=dataset_clean, x="actual_weight", ggtheme = theme_minimal(), col = "#0c4c8a", conf.int = TRUE, size = 0.5, title = "QQPlot - Actual Weight")
 shapiro.test(dataset_clean$actual_weight[dades])
+leveneTest(actual_weight ~ as.factor(race_distance), data=dataset_clean)
+
 ```
 
 En aquets cas, al qqplot veiem que les dades segueixen la linia de la normalitat, tot i que cap al final s'estanquen al voltant de 132 jin (mesura de Xina ~= 65 kg).
 Segons el Test de Shapiro–Wilk, veiem que les dades també estan normalitzades, el p-value és molt significant i el valor de Shapiro (W) és quasi 1. 
+Segons el Test de Levene, veiem que tenim un pvalue inferior al nivell de significació (<0,05) per tant rebutjarem la hipòtesi nul·la d’homoscedasticitat i concluïm que la variable presenta variàncies estadísticament diferents per als diferents grups.
 
 #### 3. Declared Horse Weight
 
@@ -258,10 +272,12 @@ Segons el Test de Shapiro–Wilk, veiem que les dades també estan normalitzades
 dades <- sample(seq(1,nrow(dataset_clean), by =1), 5000)
 ggqqplot(data=dataset_clean, x="declared_horse_weight", ggtheme = theme_minimal(), col = "#0c4c8a", conf.int = TRUE, size = 0.5, title = "QQPlot - Declared Horse Weight")
 shapiro.test(dataset_clean$declared_horse_weight[dades])
+leveneTest(declared_horse_weight ~ as.factor(race_distance), data=dataset_clean)
 ```
 
 En aquets cas, al qqplot veiem que les dades s'ajusten molt bé a la linia de la normalitat.
 Segons el Test de Shapiro–Wilk, veiem que les dades també estan normalitzades, el p-value és molt significant i el valor de Shapiro (W) és quasi 1. 
+Segons el Test de Levene, veiem que tenim un pvalue inferior al nivell de significació (<0,05) per tant rebutjarem la hipòtesi nul·la d’homoscedasticitat i concluïm que la variable presenta variàncies estadísticament diferents per als diferents grups.
 
 
 #### 4. Win Odds
@@ -270,78 +286,36 @@ Segons el Test de Shapiro–Wilk, veiem que les dades també estan normalitzades
 dades <- sample(seq(1,nrow(dataset_clean), by =1), 5000)
 ggqqplot(data=dataset_clean, x="win_odds", ggtheme = theme_minimal(), col = "#0c4c8a", conf.int = TRUE, size = 0.5, title = "QQPlot - Win Odds")
 shapiro.test(dataset_clean$win_odds[dades])
+fligner.test(win_odds ~ as.factor(race_distance), data=dataset_clean)
 ```
 
 En aquest cas, les dades no segueixen una forma normal. Al QQPlot, podem observar que les porbabilitats de guanyar estan repartides de manera "biestable", tant al 0% com al 100%, i molt poques entremig.
 Pel que fa al Test de Shapiro–Wilk, el valor (W) és molt més baix que els anteriors (0.76) no correspon a la normalització. Tenim un p-value molt signficant. 
+En aquest cas, utilitzem el Test de Fligner-Killeen, ja que la nostra variable no segueix una distribució normal. Tot i així, veiem que altre cop tenim un pvalue inferior al nivell de significació (<0,05) per tant rebutjarem la hipòtesi nul·la d’homoscedasticitat i concluïm que la variable presenta variàncies estadísticament diferents per als diferents grups.
 
 
+#### Homogeneitat:
 
-
-
-Homogeneitat:
-
-```{r label="Homogeneitat"}
-#BT = bartlett.test(dataset_clean$finish_time ~ interaction(dataset_clean$actual_weight, dataset_clean$win_odds,dataset_clean$declared_horse_weight), data = dataset_clean )
-#plot(finish_time ~ actual_weight, data = dataset_clean)
-BT = bartlett.test(finish_time ~ actual_weight, data = dataset_clean )
-print(BT)
-dataset_numerical <- select_if(dataset_clean, is.numeric)
-
-dataset_1200 <- dataset_numerical[dataset_clean$race_distance == "1200",]
-
-#pairs(dataset_1200, pch = 19,  cex = 0.5,lower.panel=NULL)
-
-'pairs.panels(dataset_1200, 
-             method = "pearson", # correlation method
-             hist.col = "#00AFBB",
-             density = TRUE,  # show density plots
-             ellipses = TRUE # show correlation ellipses
-             )'
-```
+Per a visualitzar la homogeneitat, separarem les dades segons la race_distance i utilitzarem la race_distance = 1200 com a mostra representativa, ja que és la més extensa (composta per ~9633 observacions). Veurem de manera senzilla que les variables numèriques, tal i com hem comprovat anteriorment amb els tests de Lavene i Fligner-Killeen, no són homogènies entre elles. 
 
 ```{r label="Homogeneitat"}
-#BT = bartlett.test(dataset_clean$finish_time ~ interaction(dataset_clean$actual_weight, dataset_clean$win_odds,dataset_clean$declared_horse_weight), data = dataset_clean )
-plot(finish_time ~ actual_weight, data = dataset_clean)
-BT = bartlett.test(finish_time ~ actual_weight, data = dataset_clean )
-print(BT)
+dataset_1200 <- dataset_clean[dataset_clean$race_distance == "1200",]
+
+pp <- pairs.panels(dataset_1200[,c("finish_time","win_odds","actual_weight","declared_horse_weight")], method = "pearson", col = "#00AFBB",density = TRUE,  ellipses = TRUE,  show.points = TRUE, scale = TRUE, smoother = TRUE)
+pp
+
 ```
 
 
-
-
-#No funciona aquest apartat, tot i que l'anterior si, mirar el número d'observacions per cada una.
-```{r} 
-plot(finish_time ~ declared_horse_weight, data = dataset_clean)
-#BT = bartlett.test(finish_time ~  declared_horse_weight, data = dataset_clean )
-print(BT)
-```
-
-
-
-## així funciona, amb la llista,  però no sé si es el que es vol aconseguir
-#BT = bartlett.test(list(dataset_clean$finish_time,dataset_clean$declared_horse_weight))
-#print(BT)
-#BT = bartlett.test(list(dataset_clean$finish_time,dataset_clean$actual_weight,dataset_clean$declared_horse_weight))
-#print(BT)
-#BT = bartlett.test(list(dataset_clean$actual_weight,dataset_clean$declared_horse_weight))
-#print(BT)
-
-
-### 4.3. Aplicació de proves estadístiques per comparar els grups de dades. En funció de les dades i de l’objectiu de l’estudi, aplicar proves de contrast d’hipòtesis, correlacions, regressions, etc. Aplicar almenys tres mètodes d’anàlisi diferents.
+### 3.3. Aplicació de proves estadístiques per comparar els grups de dades. En funció de les dades i de l’objectiu de l’estudi, aplicar proves de contrast d’hipòtesis, correlacions, regressions, etc. Aplicar almenys tres mètodes d’anàlisi diferents.
 
 #### 1. Correlació:
+
+Calcularem les correlacions de les variables, ja que aquestes ens poden ajudar a veure si alguna de les variables té més poder o està més relacionada amb qui guanyarà la cursa. Com que el nostre objectiu és acabar creant un model per a predir el resultat de la carrera, conèixer les correlacions ens pot ser molt útil.
 
 >Pearson
 
 Per a veure les correlacions entre les variables numèriques utilitzarem la correlació de Pearson:
-
-Primer, rescalem els dos pesos (actual_weight) i (declared_horse_weight) a variables entre 0 i 1, per a poder-les comparar. 
-
-```{r label="1"}
-dataset_clean$actual_weight <- rescale(dataset_clean$actual_weight)
-dataset_clean$declared_horse_weight <- rescale(dataset_clean$declared_horse_weight)
-```
 
 Mirem la correlación entre els valors que són numerics. Com ja hem comentat anteriorment, aquestes no es comporten igual i com podem veure hi ha una correlació directe entre el temps de la cursa i la distància. També sabem que el finish_position és una representació del finish_time, sense estar correlacionada amb la distància.
 
@@ -390,9 +364,9 @@ summary(res.aov)
 
 El resultat de la ANOVA té un pvalue significant (<0.05) per totes les variables, excepte __track_condition__. És a dir, tal i com hem vist amb el pearson amb les variables numèriques, les categòriques també són independents. Pel que fa al __track_condition__, no hi ha una diferència significant sobre la variable __final_position__ en relació al __track_condition__ (Fvalue = 1.5).
 
-> Regressió:
+#### 2. Regressió:
 
-> PCA + Regressió:
+Anem a comprovar ara la relació de dependencia entre les variables independent i la dependent que podem tenir en el nostre cas. 
 
 Primer transformem els valors categòrics a numèrics per a poder fer el PCA:
 ```{r}
@@ -402,12 +376,24 @@ dataset_num[] <- lapply(dataset_num, as.numeric)
 dataset_num <- dataset_num[ , !(names(dataset_num) %in% c("finish_time"))]
 ```
 
+Aquí tenim com a variable depenent la posició final i la resta com a independent.Podem veure a la grafica següent que agafant una única variable no tenim una clara dependencia entre aquestes, però generant el model per cada un dels diferents tipus de cursa, tenint en compte la llargada d'aquesta, veiem com el valor de relació R-squared és molt alt, per sobre del 0.85, demostrant que hi ha una forta dependencia entre les variables i la posició final del cavall en cada una de les curses.
+
+```{r}
+dades <- dataset_clean[dataset_clean$race_distance =="1200", ]
+plot(finishing_position~win_odds,data=dades)
+m1=lm(finishing_position~actual_weight+declared_horse_weight+finish_time+win_odds+trainer+jockey+horse_name+race_class+race_course+track_condition+race_name+race_id,data=dades)
+summary(m1)
+```
+
+#### 3. PCA + Regressió:
+
+Aquesta prova la farem per a comparar-la amb la regressió estàndard. Volem veure si podem millorar el model creat anteriorment amb la regressió, utilitzan els principal components necessaris com a predictors per a ajustar el model de manera més precisa.
+
 Ara creem el PCA i visualitzem el resultats:
 ```{r}
 pca <- prcomp(dataset_num, scale = TRUE)
 summary(pca)
 plot(summary(pca)$importance[3,])
-
 ```
 
 Separem les dades entre train i test:
@@ -430,7 +416,9 @@ pcr_model <- pcr(finishing_position~., data = train,scale =TRUE, validation = "C
 pcr_pred <- predict(pcr_model, test, ncomp = 7)
 accuracy(test_y, pcr_pred)
 ```
-### VISUALITZACIÓ
+
+### 4. Representació dels resultats a partir de taules i gràfiques.
+
 
 ```{r}
 library(crosstalk)
@@ -450,11 +438,4 @@ bscols(
 )
 
 ```
-
-en aquest cas veiem com la variable _win_odds_ (la provabilitat de guanyar abans d'iniciar la cursa) té una correlació força alta amb la posició final de la cursa, cosa que es pot entendre per ser un bon cavall.
-
-En aquest cas, la posició final de la cursa dependrà molt de la resta de cavalls que hi hagui i no del propi cavall, per tant, també es podria eliminar ja que no afecta a la predicció del resultat, sinó al resultat de cada cursa.
-
-
- treiem en aquest cas la variable que es vol predir, que es el temps en que ha d'acabar un cavall, i fem la predicció separant per cada una de les diferents carreres
 
