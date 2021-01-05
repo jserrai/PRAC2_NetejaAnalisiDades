@@ -65,7 +65,7 @@ Com podem veure, tenim 30 variables amb 30189 observacions. Com que hi ha moltes
 9. __length_behind_winner__ : És redundant, ja tenim la posició final de la cursa.
 
 ```{r message= FALSE, warning=FALSE}
-eliminar <- c("running_position_1","running_position_2","running_position_3","running_position_4","running_position_5","running_position_6","incident_report","src","race_date","race_number","horse_number","horse_id","sectional_time","length_behind_winner")
+eliminar <- c("running_position_1","running_position_2","running_position_3","running_position_4","running_position_5","running_position_6","incident_report","src","race_number","horse_number","horse_id","sectional_time","length_behind_winner")
 dataset_clean <- dataset[ , !(names(dataset) %in% eliminar)]
 dataset_clean[] <- lapply(dataset_clean, as.character)
 attach(dataset_clean) # Per poder fer referencia directament a les variables
@@ -201,6 +201,7 @@ dataset_outliers <- dataset_clean[-c(ind_f,ind_dw,ind_aw),]
 paste("Hem eliminat", (nrow(dataset_clean)-nrow(dataset_outliers)) , "outliers.")
 paste("Ara el nostre dataset té", nrow(dataset_outliers), "observacions.")
 dataset_clean <- dataset_outliers
+dataset_clean <- dataset_clean[ , !(names(dataset_clean) %in% c("race_date"))]
 ```
 
 ## 3. Anàlisi de les dades.
@@ -289,8 +290,8 @@ shapiro.test(dataset_clean$win_odds[dades])
 fligner.test(win_odds ~ as.factor(race_distance), data=dataset_clean)
 ```
 
-En aquest cas, les dades no segueixen una forma normal. Al QQPlot, podem observar que les porbabilitats de guanyar estan repartides de manera "biestable", tant al 0% com al 100%, i molt poques entremig.
-Pel que fa al Test de Shapiro–Wilk, el valor (W) és molt més baix que els anteriors (0.76) no correspon a la normalització. Tenim un p-value molt signficant. 
+En aquest cas, les dades sembla que no segueixen una forma normal. Al QQPlot, podem observar que les porbabilitats de guanyar estan repartides de manera "biestable", tant al 0% com al 100%, i molt poques entremig.
+Pel que fa al Test de Shapiro–Wilk, el valor (W) és molt més baix que els anteriors (0.76), però el pvalue segueix sent significant.
 En aquest cas, utilitzem el Test de Fligner-Killeen, ja que la nostra variable no segueix una distribució normal. Tot i així, veiem que altre cop tenim un pvalue inferior al nivell de significació (<0,05) per tant rebutjarem la hipòtesi nul·la d’homoscedasticitat i concluïm que la variable presenta variàncies estadísticament diferents per als diferents grups.
 
 
@@ -368,6 +369,18 @@ El resultat de la ANOVA té un pvalue significant (<0.05) per totes les variable
 
 Anem a comprovar ara la relació de dependencia entre les variables independent i la dependent que podem tenir en el nostre cas. 
 
+Aquí tenim com a variable depenent la posició final i la resta com a independent.Podem veure a la grafica següent que agafant una única variable no tenim una clara dependencia entre aquestes, però generant el model per cada un dels diferents tipus de cursa, tenint en compte la llargada d'aquesta, veiem com el valor de relació R-squared és molt alt, per sobre del 0.85, demostrant que hi ha una forta dependencia entre les variables i la posició final del cavall en cada una de les curses.
+
+```{r}
+dades <- dataset_clean[dataset_clean$race_distance =="1200", ]
+plot(finishing_position~win_odds,data=dades)
+
+m1 <- lm(finishing_position~actual_weight+declared_horse_weight+finish_time+win_odds+trainer+jockey+horse_name+race_class+race_course+track_condition+race_name+race_id,data=dades)
+summary(m1)
+```
+
+OPCIO 2: DE REGRESSIÓ:
+
 Primer transformem els valors categòrics a numèrics per a poder fer el PCA:
 ```{r}
 dataset_num <- dataset_clean
@@ -376,18 +389,41 @@ dataset_num[] <- lapply(dataset_num, as.numeric)
 dataset_num <- dataset_num[ , !(names(dataset_num) %in% c("finish_time"))]
 ```
 
-Aquí tenim com a variable depenent la posició final i la resta com a independent.Podem veure a la grafica següent que agafant una única variable no tenim una clara dependencia entre aquestes, però generant el model per cada un dels diferents tipus de cursa, tenint en compte la llargada d'aquesta, veiem com el valor de relació R-squared és molt alt, per sobre del 0.85, demostrant que hi ha una forta dependencia entre les variables i la posició final del cavall en cada una de les curses.
+Separem les dades entre train i test:
 
 ```{r}
-dades <- dataset_clean[dataset_clean$race_distance =="1200", ]
-plot(finishing_position~win_odds,data=dades)
-m1=lm(finishing_position~actual_weight+declared_horse_weight+finish_time+win_odds+trainer+jockey+horse_name+race_class+race_course+track_condition+race_name+race_id,data=dades)
-summary(m1)
+set.seed(999)
+smp_size <- floor(0.75 * nrow(dataset_num))
+
+train_ind <- sample(seq_len(nrow(dataset_num)), size = smp_size)
+
+train <- dataset_num[train_ind, ]
+test <- dataset_num[-train_ind, ]
+test_y <- test[ , (names(test) %in% c("finishing_position"))]
+test <- test[ , !(names(test) %in% c("finishing_position"))]
 ```
+
+Regresió:
+```{r}
+m1 <- lm(finishing_position~., data = train)
+m1_pred <- predict(m1, test, ncomp = 7)
+accuracy(test_y, m1_pred)
+```
+
+
+
 
 #### 3. PCA + Regressió:
 
 Aquesta prova la farem per a comparar-la amb la regressió estàndard. Volem veure si podem millorar el model creat anteriorment amb la regressió, utilitzan els principal components necessaris com a predictors per a ajustar el model de manera més precisa.
+
+Primer transformem els valors categòrics a numèrics per a poder fer el PCA:
+```{r}
+dataset_num <- dataset_clean
+dataset_num[] <- lapply(dataset_num, as.factor)
+dataset_num[] <- lapply(dataset_num, as.numeric)
+dataset_num <- dataset_num[ , !(names(dataset_num) %in% c("finish_time"))]
+```
 
 Ara creem el PCA i visualitzem el resultats:
 ```{r}
@@ -410,6 +446,7 @@ test_y <- test[ , (names(test) %in% c("finishing_position"))]
 test <- test[ , !(names(test) %in% c("finishing_position"))]
 ```
 
+
 Finalment fem el PCR (principal component regression) i calculem l'accuracy del model:
 ```{r}
 pcr_model <- pcr(finishing_position~., data = train,scale =TRUE, validation = "CV")
@@ -424,7 +461,7 @@ accuracy(test_y, pcr_pred)
 library(crosstalk)
 
 dataset_clean$finishing_position <-  unlist(lapply(dataset_clean$finishing_position, as.factor))
-dataset_clean$race_date <- dataset$race_date
+dataset_clean$race_date <- dataset_outliers$race_date
 tx <- highlight_key(dataset_clean[1:5000,])
 widgets <- bscols(
   widths = c(12,12,12),
@@ -438,4 +475,3 @@ bscols(
 )
 
 ```
-
