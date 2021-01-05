@@ -51,6 +51,6 @@ Per a respondre-ho, primer hem fet una neteja de les dades: hem determinat si te
 > * Jiawei Han, Micheine Kamber, Jian Pei (2012). Data mining: concepts and techniques. Morgan Kaufmann.<br>
 > * Jason W. Osborne (2010). Data Cleaning Basics: Best Practices in Dealing with Extreme Scores. Newborn and Infant Nursing Reviews; 10 (1): pp. 1527-3369. <br
 > * Peter Dalgaard (2008). Introductory statistics with R. Springer Science & Business Media. <br
-> * Wes McKinney (2012). Python for Data Analysis. O’Reilley Media, Inc. <br
+> * Wes McKinney (2012). Python for Data Analysis. O’Reilley Media, Inc <br
 
 
