@@ -15,9 +15,10 @@ practica2.Rmd - Codi en R del projecte.
 
 practica2.html - Codi en html del projecte.
 
+PRAC2_NetejaiAnalisiDades_JordiSerra_PaulaSobrevals.pdf - PDF amb les respostes als enunciats.
+
 Wiki del repositori - Descripcioó de la PAC, Bibliografia i components del grup.
 
-PRAC2_NetejaiAnalisiDades_JordiSerra_PaulaSobrevals.pdf - PDF amb les respostes als enunciats
 
 ___________________
 
