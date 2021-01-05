@@ -13,7 +13,9 @@ race-result-race.csv - Dataset sobre les curses extret en format csv.
 
 practica2.Rmd - Codi en R del projecte.
 
-practica2.html - Codi en html del projecte.
+practica2.html - Codi en html del projecte. El GitHub no el pot mostrar, cal descarregar-se'l i obrir-lo.
+
+practica2.pdf - Pràctica RMarkdown passada a pdf.
 
 PRAC2_NetejaiAnalisiDades_JordiSerra_PaulaSobrevals.pdf - PDF amb les respostes als enunciats.
 
