@@ -488,7 +488,7 @@ library(crosstalk)
 
 dataset_clean$finishing_position <-  unlist(lapply(dataset_clean$finishing_position, as.factor))
 dataset_clean$race_date <- dataset_outliers$race_date
-tx <- highlight_key(dataset_clean[1:5000,])
+tx <- highlight_key(dataset_clean)
 widgets <- bscols(
   widths = c(12,12,12),
   filter_select("horse_name", "Horse_name", tx, ~horse_name),
@@ -496,8 +496,12 @@ widgets <- bscols(
 )
 bscols(
   widths = c(4,6), widgets, 
-  plot_ly(tx, x = ~race_date, y = ~finish_time, showlegend = FALSE, type = 'scatter', text = ~paste("Horse name: ", horse_name, '$<br>Position:', finishing_position),
+  plot_ly(tx, x = ~race_date, y = ~finish_time, showlegend = FALSE, type = 'scatter', text = ~paste("Horse name: ", horse_name, '<br>Position:', finishing_position, '<br>Jockey:', jockey),
   color = ~race_distance, size = ~as.numeric(finishing_position)
   )
 )
 ```
+
+
+
+
