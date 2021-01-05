@@ -30,6 +30,7 @@ Aquest conté els resultats de les 1561 curses de cavalls fetes a Hong Kong entr
 
 Hem fet servir **R** per a dur a terme la Neteja i Anàlisi de dades.
 
+![https://i.ytimg.com/vi/rbaqI4NttAU/maxresdefault.jpg](https://i.ytimg.com/vi/rbaqI4NttAU/maxresdefault.jpg) 
 
 ## Descripció del la pràctica
 
