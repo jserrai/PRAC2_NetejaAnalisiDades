@@ -402,41 +402,6 @@ m1 <- lm(finishing_position~actual_weight+declared_horse_weight+win_odds+trainer
 summary(m1)
 ```
 
-OPCIO 2: DE REGRESSIÓ:
-
-Primer transformem els valors categòrics a numèrics per a poder fer el PCA:
-```{r message= FALSE, warning=FALSE}
-dataset_num <- dataset_clean
-dataset_num[] <- lapply(dataset_num, as.factor)
-dataset_num[] <- lapply(dataset_num, as.numeric)
-dataset_num <- dataset_num[ , !(names(dataset_num) %in% c("finish_time"))]
-```
-
-Separem les dades entre train i test:
-
-```{r message= FALSE, warning=FALSE}
-set.seed(999)
-smp_size <- floor(0.75 * nrow(dataset_num))
-
-train_ind <- sample(seq_len(nrow(dataset_num)), size = smp_size)
-
-train <- dataset_num[train_ind, ]
-test <- dataset_num[-train_ind, ]
-test_y <- test[ , (names(test) %in% c("finishing_position"))]
-test <- test[ , !(names(test) %in% c("finishing_position"))]
-```
-
-i ara ja podem calcular la regresió i el model de predicció, per veure que tal es comporta.
-Regresió:
-```{r message= FALSE, warning=FALSE}
-m1 <- lm(finishing_position~., data = train)
-summary(m1)
-m1_pred <- predict(m1, test, ncomp = 7)
-accuracy(test_y, m1_pred)
-```
-
-
-
 
 #### 3. PCA + Regressió:
 
