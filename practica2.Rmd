@@ -222,6 +222,7 @@ str(dataset_clean)
 ```
 
 Tenim algunes variables numèriques contínues i d'altres categòriques. Treballarem amb totes les dades que tenim al _dataset_clean_, un cop hem eliminat els outliers i les variables repetides o que no eren útils. Separararem el dataset, i treballarem per separat amb les dades numèriques continues i les dades categòriques, ja que per a treballar-les molts cops calen diferents funcions. Finalment per a dur a terme els anàlisis, juntarem el dataset i trasformarem aquelles variables char en numèriques, així podrem analitzar-lo tot sencer.
+
 A més a més, les nostres dades estan mesurades amb diferents llargades de curses, aquest fet, altera els valors d'algunes variables (per exemple, el temps d'una cursa de 1000m serà molt diferent al d'una cursa de 2400m) per tant, per a analitzar la forma de les dades caldrà separar-les per llargada. Es a dir, si l'analisi ho requereix, farem l'estudi per separat de cada tipus de cursa per poder diferenciar bé el comportament. Com veurem per exemple en la regresió.
 
 
@@ -306,7 +307,6 @@ fligner.test(win_odds ~ as.factor(race_distance), data=dataset_clean)
 
 
 En aquest cas, les dades sembla que no segueixen una forma normal. Al _QQPlot_, podem observar que les porbabilitats de guanyar estan repartides de manera "biestable", tant al 0% com al 100%, i molt poques entremig.
-
 Pel que fa al Test de Shapiro–Wilk, el valor (W) és molt més baix que els anteriors (0.76), però el _p-value_ segueix sent significant.
 En aquest cas, utilitzem el Test de Fligner-Killeen, ja que la nostra variable no segueix una distribució normal. Tot i així, veiem que altre cop tenim un _p-value_ inferior al nivell de significació (<0,05) per tant rebutjarem la hipòtesi nul·la d’homoscedasticitat i concluïm que la variable presenta variàncies estadísticament diferents per als diferents grups.
 
@@ -368,7 +368,7 @@ pairs.panels(dataset_numerical,
 ```
 
 Podem veure que no tenim correlacions entre les variables numèriques o són gairebé nules. A més a més, els _p-values_ tots són significants (<0.05). No tenir correlacions ens indica que les variables entre elles són independents. És a dir, que podem analitzar-les sense trobar-nos biaixos de collinearitat.
-En el _pairplot_, veiem que quasi hi ha homogeneitat entre les variables, tot i així _win_odds_ presenta petites homogeneitats amb les variables: amb _finishing_position_  hi veiem una homogeneitat positiva i amb _actual_weight_ hi veiem una petita homogeneitat negativa.
+En el _pairplot_, veiem que quasi no hi ha homogeneitat entre les variables, tot i així _win_odds_ presenta petites homogeneitats amb les variables: amb _finishing_position_  hi veiem una homogeneitat positiva i amb _actual_weight_ hi veiem una petita homogeneitat negativa.
 
 
 >ANOVA
@@ -481,7 +481,7 @@ accuracy(test_y, pcr_pred)
 
 ### 4. Representació dels resultats a partir de taules i gràfiques.
 
-anem a veure ara la reprentació dels resultats en taules i gràfics dels resultats obtinguts, ho podem fer mitjançant la següent gràfica dinàmica en la que es pot seleccionar cada un dels caballs o les curses en que estem fent l'estudi.
+Anem a veure ara la reprentació dels resultats en taules i gràfics dels resultats obtinguts, ho podem fer mitjançant la següent gràfica dinàmica en la que es pot seleccionar cada un dels caballs o les curses en que estem fent l'estudi.
 
 ```{r message= FALSE, warning=FALSE}
 library(crosstalk)
@@ -496,7 +496,8 @@ widgets <- bscols(
 )
 bscols(
   widths = c(4,6), widgets, 
-  plot_ly(tx, x = ~race_date, y = ~finish_time, showlegend = TRUE) %>% 
-    add_lines(color = ~finishing_position)
+  plot_ly(tx, x = ~race_date, y = ~finish_time, showlegend = FALSE, type = 'scatter', text = ~paste("Horse name: ", horse_name, '$<br>Position:', finishing_position),
+  color = ~race_distance, size = ~as.numeric(finishing_position)
+  )
 )
 ```
