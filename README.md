@@ -13,11 +13,13 @@ race-result-race.csv - Dataset sobre les curses extret en format csv.
 
 practica2.Rmd - Codi en R del projecte.
 
-practica2.html - Codi en html del projecte.
+practica2.html - Codi en html del projecte. El GitHub no el pot mostrar, cal descarregar-se'l i obrir-lo.
+
+practica2.pdf - Pràctica RMarkdown passada a pdf.
 
 PRAC2_NetejaiAnalisiDades_JordiSerra_PaulaSobrevals.pdf - PDF amb les respostes als enunciats.
 
-Wiki del repositori - Descripcioó de la PAC, Bibliografia i components del grup.
+Wiki del repositori - Descripció de la PRAC2, Bibliografia i components del grup.
 
 
 ___________________
@@ -49,6 +51,6 @@ Per a respondre-ho, primer hem fet una neteja de les dades: hem determinat si te
 > * Jiawei Han, Micheine Kamber, Jian Pei (2012). Data mining: concepts and techniques. Morgan Kaufmann.<br>
 > * Jason W. Osborne (2010). Data Cleaning Basics: Best Practices in Dealing with Extreme Scores. Newborn and Infant Nursing Reviews; 10 (1): pp. 1527-3369. <br
 > * Peter Dalgaard (2008). Introductory statistics with R. Springer Science & Business Media. <br
-> * Wes McKinney (2012). Python for Data Analysis. O’Reilley Media, Inc. <br
+> * Wes McKinney (2012). Python for Data Analysis. O’Reilley Media, Inc <br
 
 
