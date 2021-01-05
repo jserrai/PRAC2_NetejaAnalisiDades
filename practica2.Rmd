@@ -1,5 +1,5 @@
 ---
-title: "practica2"
+title: "PRÀCTICA2: Neteja i anàlisi de les dades"
 author: "Paula Sobrevals, Jordi Serra"
 date: "05/01/2021"
 output: html_document
@@ -392,7 +392,7 @@ El resultat de la ANOVA té un _p-value_ significant (<0.05) per totes les varia
 
 Anem a comprovar ara la relació de dependencia entre les variables independent i la dependent que podem tenir en el nostre cas. 
 
-Aquí tenim com a variable depenent la posició final i la resta com a independent. Podem veure a la grafica següent que agafant una única variable no tenim una clara dependencia entre aquestes, però generant el model per cada un dels diferents tipus de cursa, tenint en compte la llargada d'aquesta, veiem com el valor de relació R-squared és molt alt, per sobre del 0.85, demostrant que hi ha una forta dependencia entre les variables i la posició final del cavall en cada una de les curses.
+Aquí tenim com a variable depenent la posició final i la resta com a independent. Podem veure a la grafica següent que agafant una única variable no tenim una clara dependencia entre aquestes, però generant el model per cada un dels diferents tipus de cursa, tenint en compte la llargada d'aquesta, veiem com el valor de relació R-squared no és alt, per sobre del 0.47, demostrant que hi ha una certa dependencia entre les variables i la posició final del cavall en cada una de les curses. 
 
 ```{r message= FALSE, warning=FALSE}
 dades <- dataset_clean[dataset_clean$race_distance =="1200", ]
