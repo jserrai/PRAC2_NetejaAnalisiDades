@@ -408,7 +408,6 @@ summary(m1)
 Aquesta prova la farem per a comparar-la amb la regressió estàndard. Volem veure si podem millorar el model creat anteriorment amb la regressió, utilitzan els principal components necessaris com a predictors per a ajustar el model de manera més precisa.
 
 Primer transformem els valors categòrics a numèrics per a poder fer el PCA:
-
 ```{r message= FALSE, warning=FALSE}
 dataset_num <- dataset_clean
 dataset_num[] <- lapply(dataset_num, as.factor)
@@ -416,33 +415,28 @@ dataset_num[] <- lapply(dataset_num, as.numeric)
 dataset_num <- dataset_num[ , !(names(dataset_num) %in% c("finish_time"))]
 ```
 
-Ara creem el PCA i visualitzem el resultats:
+Ara separem les dades entre la variable dependent (finishing_position), i les independents. Després escalem els resultats, creem el PCA i visualitzem el resultats:
 ```{r message= FALSE, warning=FALSE}
-pca <- prcomp(dataset_num, scale = TRUE)
-summary(pca)
-plot(summary(pca)$importance[3,])
+finishing_position_y <- dataset_num$finishing_position
+dataset_num$finishing_position <- NULL
+
+finishing_position_y <- scale(finishing_position_y)
+dataset_num <- scale(dataset_num)
+
+pca1 <- prcomp(dataset_num, center=TRUE, scale.=TRUE)
+plot(summary(pca1)$importance[3,])
+summary(pca1)
 ```
 
-Separem les dades entre train i test com s'ha fet abans :
-```{r message= FALSE, warning=FALSE}
-set.seed(999)
-smp_size <- floor(0.75 * nrow(dataset_num))
-
-train_ind <- sample(seq_len(nrow(dataset_num)), size = smp_size)
-
-train <- dataset_num[train_ind, ]
-test <- dataset_num[-train_ind, ]
-test_y <- test[ , (names(test) %in% c("finishing_position"))]
-test <- test[ , !(names(test) %in% c("finishing_position"))]
+Un cop ja tenim els pca, utilitzarem aquests per a crear el model:
+```{r}
+pcs <- as.data.frame(pca1$x)
+dataset_pcs <- cbind(finishing_position_y, pcs)
+lmodel <- lm(finishing_position_y ~ ., data = dataset_pcs)
+summary(lmodel)
 ```
 
-
-Finalment fem el PCR (principal component regression) i calculem l'accuracy del model trobat:
-```{r message= FALSE, warning=FALSE}
-pcr_model <- pcr(finishing_position~., data = train,scale =TRUE, validation = "CV")
-pcr_pred <- predict(pcr_model, test, ncomp = 7)
-accuracy(test_y, pcr_pred)
-```
+Podem veure, que el nostre model ara ha empitjorat encara més, tenim un R2 de 0.27. Així doncs, veiem que utilitzar els PCA per a millorar el model no ha donat els resultats esperats.
 
 ### 4. Representació dels resultats a partir de taules i gràfiques.
 
@@ -465,6 +459,7 @@ bscols(
   color = ~race_distance, size = ~as.numeric(finishing_position)
   )
 )
+
 ```
 
 
